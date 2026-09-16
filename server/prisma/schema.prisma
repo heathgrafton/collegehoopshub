@@ -1,0 +1,170 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  // SQLite for local/dev simplicity. Swap to "postgresql" + a DATABASE_URL
+  // for production (schema is already Postgres-compatible).
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Conference {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  shortName String
+  teams     Team[]
+}
+
+model Team {
+  id            String       @id @default(cuid())
+  name          String
+  shortName     String
+  nickname      String
+  city          String
+  state         String
+  primaryColor  String
+  conferenceId  String
+  conference    Conference   @relation(fields: [conferenceId], references: [id])
+  players       Player[]
+  homeGames     Game[]       @relation("HomeTeam")
+  awayGames     Game[]       @relation("AwayTeam")
+  seasonStats   TeamSeasonStat[]
+  newsArticles  NewsArticle[]
+  favorites     Favorite[]
+
+  @@index([conferenceId])
+}
+
+model Player {
+  id            String   @id @default(cuid())
+  teamId        String
+  team          Team     @relation(fields: [teamId], references: [id])
+  firstName     String
+  lastName      String
+  jerseyNumber  String
+  position      String
+  heightInches  Int
+  classYear     String // Fr, So, Jr, Sr, Gr
+  hometown      String
+  seasonStats   PlayerSeasonStat[]
+  chatMessages  ChatMessage[]
+  favorites     Favorite[]
+
+  @@index([teamId])
+}
+
+model Game {
+  id           String    @id @default(cuid())
+  season       Int
+  startTime    DateTime
+  status       String    // "scheduled" | "live" | "final"
+  period       Int       @default(0)
+  clock        String    @default("")
+  homeTeamId   String
+  awayTeamId   String
+  homeTeam     Team      @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeam     Team      @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  homeScore    Int       @default(0)
+  awayScore    Int       @default(0)
+  venue        String
+  broadcast    String?
+  chatMessages ChatMessage[]
+
+  @@index([homeTeamId])
+  @@index([awayTeamId])
+  @@index([status])
+}
+
+model PlayerSeasonStat {
+  id           String  @id @default(cuid())
+  playerId     String
+  player       Player  @relation(fields: [playerId], references: [id])
+  season       Int
+  gamesPlayed  Int
+  pointsPerGame     Float
+  reboundsPerGame   Float
+  assistsPerGame    Float
+  stealsPerGame     Float
+  blocksPerGame     Float
+  minutesPerGame    Float
+  fieldGoalPct      Float
+  threePointPct     Float
+  freeThrowPct      Float
+
+  @@unique([playerId, season])
+}
+
+model TeamSeasonStat {
+  id                String @id @default(cuid())
+  teamId            String
+  team              Team   @relation(fields: [teamId], references: [id])
+  season            Int
+  wins              Int
+  losses            Int
+  conferenceWins    Int
+  conferenceLosses  Int
+  pointsPerGame     Float
+  opponentPointsPerGame Float
+  reboundsPerGame   Float
+  assistsPerGame    Float
+  netRating         Float
+  strengthOfSchedule Float
+
+  @@unique([teamId, season])
+}
+
+model NewsArticle {
+  id          String   @id @default(cuid())
+  title       String
+  summary     String
+  body        String
+  source      String
+  publishedAt DateTime
+  imageUrl    String?
+  teamId      String?
+  team        Team?    @relation(fields: [teamId], references: [id])
+
+  @@index([teamId])
+  @@index([publishedAt])
+}
+
+// --- Roadmap models (schema in place now; not yet wired to the mobile UI) ---
+
+model User {
+  id          String     @id @default(cuid())
+  email       String     @unique
+  displayName String
+  createdAt   DateTime   @default(now())
+  favorites   Favorite[]
+  chatMessages ChatMessage[]
+}
+
+model Favorite {
+  id           String  @id @default(cuid())
+  userId       String
+  user         User    @relation(fields: [userId], references: [id])
+  teamId       String?
+  team         Team?   @relation(fields: [teamId], references: [id])
+  playerId     String?
+  player       Player? @relation(fields: [playerId], references: [id])
+  conferenceName String?
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  gameId    String?
+  game      Game?    @relation(fields: [gameId], references: [id])
+  playerId  String?
+  player    Player?  @relation(fields: [playerId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([gameId])
+  @@index([playerId])
+}
