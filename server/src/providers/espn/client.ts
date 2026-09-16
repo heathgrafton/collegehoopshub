@@ -2,9 +2,11 @@ import type { EspnNewsResponse, EspnRosterResponse, EspnScoreboardResponse, Espn
 
 const BASE_URL = "https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball";
 
+// Standings live on a different ESPN host than the other site-api endpoints;
+// site.api.espn.com's own /standings route returns an empty stub.
+const STANDINGS_BASE_URL = "https://site.web.api.espn.com/apis/v2/sports/basketball/mens-college-basketball";
+
 // ESPN's "group" id for the full Division I men's basketball field.
-// Used across community tooling for this endpoint; unverified here since
-// this sandbox cannot reach the network to confirm it.
 const DIVISION_I_GROUP = "50";
 
 class EspnClientError extends Error {
@@ -32,7 +34,7 @@ export const espnClient = {
   fetchStandings(season?: number): Promise<EspnStandingsResponse> {
     const qs = new URLSearchParams({ group: DIVISION_I_GROUP });
     if (season) qs.set("season", String(season));
-    return getJson(`${BASE_URL}/standings?${qs.toString()}`);
+    return getJson(`${STANDINGS_BASE_URL}/standings?${qs.toString()}`);
   },
 
   /** Games for a given date (YYYYMMDD, local ESPN convention). Defaults to today. */

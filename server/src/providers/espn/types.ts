@@ -1,10 +1,9 @@
 /**
  * Loose types for ESPN's unofficial "site API" JSON. This API isn't
  * documented by ESPN — these shapes are reconstructed from public knowledge
- * of the endpoints and widely-used community tooling, not verified against
- * a live response (this sandbox has no network access to test with). Every
- * field consumers actually read should be treated as possibly-missing;
- * see mappers.ts for the defensive handling.
+ * of the endpoints and widely-used community tooling. Every field consumers
+ * actually read should be treated as possibly-missing; see mappers.ts for
+ * the defensive handling.
  */
 
 export type EspnStandingsResponse = {

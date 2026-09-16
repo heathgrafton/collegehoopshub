@@ -237,7 +237,10 @@ export function mapNews(raw: EspnNewsResponse): NormalizedArticle[] {
       body: a.description ?? "",
       publishedAt: a.published ? new Date(a.published) : new Date(),
       imageUrl: a.images?.[0]?.url ?? null,
-      teamEspnIds: (a.categories ?? []).map((c) => c.team?.id).filter((id): id is string => Boolean(id)),
+      teamEspnIds: (a.categories ?? [])
+        .map((c) => c.team?.id)
+        .filter((id): id is string | number => Boolean(id))
+        .map((id) => String(id)),
     });
   }
   return out;
