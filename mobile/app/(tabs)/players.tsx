@@ -6,6 +6,7 @@ import { useApi } from "../../src/api/useApi";
 import { useFavorites } from "../../src/favorites/FavoritesContext";
 import { colors } from "../../src/theme/colors";
 import { EmptyView, ErrorView, LoadingView } from "../../src/components/StateViews";
+import { PlayerPhoto } from "../../src/components/PlayerPhoto";
 
 function PlayerRow({ player }: { player: PlayerListItem }) {
   const { isFavoritePlayer, toggleFavoritePlayer } = useFavorites();
@@ -14,7 +15,7 @@ function PlayerRow({ player }: { player: PlayerListItem }) {
   return (
     <Link href={`/player/${player.id}`} asChild>
       <Pressable style={styles.row}>
-        <View style={[styles.colorDot, { backgroundColor: player.team.primaryColor }]} />
+        <PlayerPhoto uri={player.photoUrl} initials={`${player.firstName[0] ?? ""}${player.lastName[0] ?? ""}`} />
         <View style={styles.info}>
           <Text style={styles.name} numberOfLines={1}>
             {player.firstName} {player.lastName}
@@ -99,7 +100,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     gap: 12,
   },
-  colorDot: { width: 12, height: 12, borderRadius: 6 },
   info: { flex: 1 },
   name: { color: colors.textPrimary, fontSize: 15, fontWeight: "600" },
   sub: { color: colors.textMuted, fontSize: 12, marginTop: 2 },

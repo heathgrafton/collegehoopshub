@@ -2,12 +2,11 @@ import { prisma } from "../../prisma";
 import { cbbdClient } from "./client";
 import { mapPlayerSeasonStats, mapRecruits, mapTeamSeasonStats, mapTransfers, type NormalizedPlayerMove } from "./mappers";
 
-const CURRENT_SEASON = new Date().getMonth() >= 6 ? new Date().getFullYear() + 1 : new Date().getFullYear();
-
-// The portal/recruiting endpoints label rows by calendar year, not the
-// +1-shifted "season" convention above (verified live: 2026 already has data
-// for both, 2027 doesn't exist yet).
-const CURRENT_RECRUITING_YEAR = new Date().getFullYear();
+// CBBD labels a season by its ending year (e.g. `season: 2026` = the 2025-26
+// season, seasonLabel "20252026") and portal/recruiting rows the same way.
+// Verified live on 2026-09-16: 2026 has full season-stat and recruiting data;
+// 2027 (today's actual season, not yet played) has none for either.
+const CURRENT_SEASON = new Date().getFullYear();
 
 function normalizeName(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -74,6 +73,9 @@ export async function syncTeamSeasonStats(season: number = CURRENT_SEASON) {
         assistsPerGame: s.assistsPerGame,
         netRating: s.netRating,
         strengthOfSchedule: s.strengthOfSchedule,
+        pace: s.pace,
+        effectiveFieldGoalPct: s.effectiveFieldGoalPct,
+        turnoversPerGame: s.turnoversPerGame,
       },
       // Win/loss record is owned by the ESPN standings/scoreboard sync,
       // which stays fresher during the season — only advanced stats here.
@@ -84,6 +86,9 @@ export async function syncTeamSeasonStats(season: number = CURRENT_SEASON) {
         assistsPerGame: s.assistsPerGame,
         netRating: s.netRating,
         strengthOfSchedule: s.strengthOfSchedule,
+        pace: s.pace,
+        effectiveFieldGoalPct: s.effectiveFieldGoalPct,
+        turnoversPerGame: s.turnoversPerGame,
       },
     });
   }
@@ -146,6 +151,23 @@ export async function syncPlayerSeasonStats(season: number = CURRENT_SEASON) {
         fieldGoalPct: s.fieldGoalPct ?? 0,
         threePointPct: s.threePointPct ?? 0,
         freeThrowPct: s.freeThrowPct ?? 0,
+        turnoversPerGame: s.turnoversPerGame,
+        foulsPerGame: s.foulsPerGame,
+        offensiveReboundsPerGame: s.offensiveReboundsPerGame,
+        defensiveReboundsPerGame: s.defensiveReboundsPerGame,
+        fieldGoalsMade: s.fieldGoalsMade,
+        fieldGoalsAttempted: s.fieldGoalsAttempted,
+        threePointMade: s.threePointMade,
+        threePointAttempted: s.threePointAttempted,
+        freeThrowsMade: s.freeThrowsMade,
+        freeThrowsAttempted: s.freeThrowsAttempted,
+        usage: s.usage,
+        offensiveRating: s.offensiveRating,
+        defensiveRating: s.defensiveRating,
+        netRating: s.netRating,
+        effectiveFieldGoalPct: s.effectiveFieldGoalPct,
+        trueShootingPct: s.trueShootingPct,
+        winShares: s.winShares,
       },
       update: {
         gamesPlayed: s.gamesPlayed,
@@ -158,6 +180,23 @@ export async function syncPlayerSeasonStats(season: number = CURRENT_SEASON) {
         fieldGoalPct: s.fieldGoalPct ?? 0,
         threePointPct: s.threePointPct ?? 0,
         freeThrowPct: s.freeThrowPct ?? 0,
+        turnoversPerGame: s.turnoversPerGame,
+        foulsPerGame: s.foulsPerGame,
+        offensiveReboundsPerGame: s.offensiveReboundsPerGame,
+        defensiveReboundsPerGame: s.defensiveReboundsPerGame,
+        fieldGoalsMade: s.fieldGoalsMade,
+        fieldGoalsAttempted: s.fieldGoalsAttempted,
+        threePointMade: s.threePointMade,
+        threePointAttempted: s.threePointAttempted,
+        freeThrowsMade: s.freeThrowsMade,
+        freeThrowsAttempted: s.freeThrowsAttempted,
+        usage: s.usage,
+        offensiveRating: s.offensiveRating,
+        defensiveRating: s.defensiveRating,
+        netRating: s.netRating,
+        effectiveFieldGoalPct: s.effectiveFieldGoalPct,
+        trueShootingPct: s.trueShootingPct,
+        winShares: s.winShares,
       },
     });
   }
@@ -171,7 +210,7 @@ export async function syncPlayerSeasonStats(season: number = CURRENT_SEASON) {
 }
 
 /** Upserts transfer-portal moves and recruiting commitments, matching a destination team when one exists. */
-export async function syncPlayerMoves(year: number = CURRENT_RECRUITING_YEAR) {
+export async function syncPlayerMoves(year: number = CURRENT_SEASON) {
   const [rawTransfers, rawRecruits] = await Promise.all([
     cbbdClient.fetchPortalTransfers(year),
     cbbdClient.fetchRecruits(year),

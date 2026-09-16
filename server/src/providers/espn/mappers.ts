@@ -41,6 +41,7 @@ export type NormalizedTeam = {
   city: string;
   state: string;
   primaryColor: string;
+  logoUrl: string | null;
   record: NormalizedTeamRecord;
 };
 
@@ -67,6 +68,7 @@ export type NormalizedPlayer = {
   heightInches: number;
   classYear: string;
   hometown: string;
+  photoUrl: string | null;
 };
 
 export type NormalizedArticle = {
@@ -126,6 +128,7 @@ export function mapTeamsFromStandings(raw: EspnStandingsResponse): NormalizedTea
         city: team.location ?? "",
         state: "",
         primaryColor: normalizeColor(team.color),
+        logoUrl: team.logos?.[0]?.href ?? null,
         record: {
           // Candidate stat-name keys are a best guess; if these come back
           // as 0 for every team, inspect entry.stats[].name from a live
@@ -214,6 +217,7 @@ export function mapRoster(raw: EspnRosterResponse): NormalizedPlayer[] {
       heightInches: a.height ?? 0,
       classYear: classYearFromExperience(a.experience),
       hometown: [a.birthPlace?.city, a.birthPlace?.state].filter(Boolean).join(", "),
+      photoUrl: a.headshot?.href ?? null,
     });
   }
   return out;

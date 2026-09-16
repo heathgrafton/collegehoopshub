@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Link } from "expo-router";
 import { colors } from "../theme/colors";
 import type { GameSummary } from "../api/client";
+import { TeamLogo } from "./TeamLogo";
 
 function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
@@ -20,7 +21,7 @@ function TeamLine({
 }) {
   return (
     <View style={styles.teamRow}>
-      <View style={[styles.colorDot, { backgroundColor: team.primaryColor }]} />
+      <TeamLogo uri={team.logoUrl} color={team.primaryColor} size={20} />
       <Text
         style={[
           styles.teamName,
@@ -111,11 +112,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-  },
-  colorDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
   },
   teamName: {
     color: colors.textSecondary,

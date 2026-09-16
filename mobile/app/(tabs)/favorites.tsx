@@ -6,6 +6,8 @@ import { useApi } from "../../src/api/useApi";
 import { useFavorites } from "../../src/favorites/FavoritesContext";
 import { colors } from "../../src/theme/colors";
 import { ErrorView, LoadingView } from "../../src/components/StateViews";
+import { TeamLogo } from "../../src/components/TeamLogo";
+import { PlayerPhoto } from "../../src/components/PlayerPhoto";
 
 export default function FavoritesScreen() {
   const { favoriteTeamIds, favoritePlayerIds, toggleFavoriteTeam, toggleFavoritePlayer } = useFavorites();
@@ -47,7 +49,7 @@ export default function FavoritesScreen() {
           {favoriteTeams.map((t) => (
             <Link key={t.id} href={`/team/${t.id}`} asChild>
               <Pressable style={styles.row}>
-                <View style={[styles.colorDot, { backgroundColor: t.primaryColor }]} />
+                <TeamLogo uri={t.logoUrl} color={t.primaryColor} />
                 <Text style={styles.rowText}>{t.name}</Text>
                 <Pressable hitSlop={10} onPress={() => toggleFavoriteTeam(t.id)}>
                   <Text style={styles.star}>★</Text>
@@ -64,7 +66,7 @@ export default function FavoritesScreen() {
           {favoritePlayers.map((p) => (
             <Link key={p.id} href={`/player/${p.id}`} asChild>
               <Pressable style={styles.row}>
-                <View style={[styles.colorDot, { backgroundColor: p.team.primaryColor }]} />
+                <PlayerPhoto uri={p.photoUrl} initials={`${p.firstName[0] ?? ""}${p.lastName[0] ?? ""}`} />
                 <Text style={styles.rowText}>
                   {p.firstName} {p.lastName}
                 </Text>
@@ -97,7 +99,6 @@ const styles = StyleSheet.create({
     padding: 14,
     gap: 12,
   },
-  colorDot: { width: 12, height: 12, borderRadius: 6 },
   rowText: { color: colors.textPrimary, fontSize: 15, fontWeight: "600", flex: 1 },
   star: { color: colors.accent, fontSize: 18 },
 });

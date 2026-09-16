@@ -5,6 +5,8 @@ import { useApi } from "../../src/api/useApi";
 import { useFavorites } from "../../src/favorites/FavoritesContext";
 import { colors } from "../../src/theme/colors";
 import { ErrorView, LoadingView } from "../../src/components/StateViews";
+import { TeamLogo } from "../../src/components/TeamLogo";
+import { PlayerPhoto } from "../../src/components/PlayerPhoto";
 
 function fmt(value: number | null | undefined, digits = 1): string {
   return value === null || value === undefined ? "–" : value.toFixed(digits);
@@ -23,6 +25,7 @@ function PlayerRow({ player }: { player: RosterPlayer }) {
   return (
     <Link href={`/player/${player.id}`} asChild>
       <Pressable style={styles.playerRow}>
+        <PlayerPhoto uri={player.photoUrl} initials={`${player.firstName[0] ?? ""}${player.lastName[0] ?? ""}`} size={32} />
         <Text style={styles.jersey}>#{player.jerseyNumber}</Text>
         <View style={styles.playerInfo}>
           <Text style={styles.playerName}>
@@ -54,7 +57,7 @@ export default function TeamDetailScreen() {
       <Stack.Screen options={{ title: team.shortName }} />
 
       <View style={styles.header}>
-        <View style={[styles.colorDot, { backgroundColor: team.primaryColor }]} />
+        <TeamLogo uri={team.logoUrl} color={team.primaryColor} size={48} />
         <View style={{ flex: 1 }}>
           <Text style={styles.teamName}>{team.name}</Text>
           <Text style={styles.teamSub}>
@@ -124,7 +127,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   content: { padding: 16, gap: 16, paddingBottom: 40 },
   header: { flexDirection: "row", alignItems: "center", gap: 12 },
-  colorDot: { width: 20, height: 20, borderRadius: 10 },
   teamName: { color: colors.textPrimary, fontSize: 20, fontWeight: "700" },
   teamSub: { color: colors.textSecondary, fontSize: 13, marginTop: 2 },
   starText: { color: colors.textMuted, fontSize: 26 },

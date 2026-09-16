@@ -2,7 +2,7 @@ import { Router } from "express";
 import { prisma } from "../prisma";
 
 export const teamsRouter = Router();
-const CURRENT_SEASON = 2026;
+const CURRENT_SEASON = new Date().getFullYear();
 
 teamsRouter.get("/", async (req, res) => {
   const { conference, search } = req.query as { conference?: string; search?: string };
@@ -28,6 +28,7 @@ teamsRouter.get("/", async (req, res) => {
         shortName: t.shortName,
         nickname: t.nickname,
         primaryColor: t.primaryColor,
+        logoUrl: t.logoUrl,
         conference: { id: t.conference.id, name: t.conference.name, shortName: t.conference.shortName },
         record: stat
           ? {
@@ -96,6 +97,7 @@ teamsRouter.get("/:id", async (req, res) => {
       city: team.city,
       state: team.state,
       primaryColor: team.primaryColor,
+      logoUrl: team.logoUrl,
       conference: { id: team.conference.id, name: team.conference.name, shortName: team.conference.shortName },
       record: stat
         ? {
@@ -113,6 +115,9 @@ teamsRouter.get("/:id", async (req, res) => {
             assistsPerGame: stat.assistsPerGame,
             netRating: stat.netRating,
             strengthOfSchedule: stat.strengthOfSchedule,
+            pace: stat.pace,
+            effectiveFieldGoalPct: stat.effectiveFieldGoalPct,
+            turnoversPerGame: stat.turnoversPerGame,
           }
         : null,
       roster: team.players.map((p) => ({
@@ -122,6 +127,7 @@ teamsRouter.get("/:id", async (req, res) => {
         jerseyNumber: p.jerseyNumber,
         position: p.position,
         classYear: p.classYear,
+        photoUrl: p.photoUrl,
         pointsPerGame: p.seasonStats[0]?.pointsPerGame ?? null,
         reboundsPerGame: p.seasonStats[0]?.reboundsPerGame ?? null,
         assistsPerGame: p.seasonStats[0]?.assistsPerGame ?? null,

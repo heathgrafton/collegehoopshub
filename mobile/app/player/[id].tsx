@@ -5,6 +5,7 @@ import { useApi } from "../../src/api/useApi";
 import { useFavorites } from "../../src/favorites/FavoritesContext";
 import { colors } from "../../src/theme/colors";
 import { ErrorView, LoadingView } from "../../src/components/StateViews";
+import { PlayerPhoto } from "../../src/components/PlayerPhoto";
 
 function StatBox({ label, value }: { label: string; value: string }) {
   return (
@@ -13,6 +14,19 @@ function StatBox({ label, value }: { label: string; value: string }) {
       <Text style={styles.statLabel}>{label}</Text>
     </View>
   );
+}
+
+function fmt(value: number | null | undefined, digits = 1): string {
+  return value === null || value === undefined ? "–" : value.toFixed(digits);
+}
+
+function pct(value: number | null | undefined): string {
+  return value === null || value === undefined ? "–" : `${(value * 100).toFixed(1)}%`;
+}
+
+function makeAttempt(made: number | null, attempted: number | null): string {
+  if (made === null || attempted === null) return "–";
+  return `${made.toFixed(1)}-${attempted.toFixed(1)}`;
 }
 
 function formatHeight(inches: number) {
@@ -36,7 +50,7 @@ export default function PlayerDetailScreen() {
       <Stack.Screen options={{ title: `${player.firstName} ${player.lastName}` }} />
 
       <View style={styles.header}>
-        <View style={[styles.colorDot, { backgroundColor: player.team.primaryColor }]} />
+        <PlayerPhoto uri={player.photoUrl} initials={`${player.firstName[0] ?? ""}${player.lastName[0] ?? ""}`} size={64} />
         <View style={{ flex: 1 }}>
           <Text style={styles.name}>
             {player.firstName} {player.lastName}
@@ -56,23 +70,62 @@ export default function PlayerDetailScreen() {
 
       {s && (
         <>
-          <View style={styles.statsRow}>
-            <StatBox label="PPG" value={s.pointsPerGame.toFixed(1)} />
-            <StatBox label="RPG" value={s.reboundsPerGame.toFixed(1)} />
-            <StatBox label="APG" value={s.assistsPerGame.toFixed(1)} />
-            <StatBox label="MPG" value={s.minutesPerGame.toFixed(1)} />
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Per Game</Text>
+            <View style={styles.statsRow}>
+              <StatBox label="PPG" value={fmt(s.pointsPerGame)} />
+              <StatBox label="RPG" value={fmt(s.reboundsPerGame)} />
+              <StatBox label="APG" value={fmt(s.assistsPerGame)} />
+              <StatBox label="MPG" value={fmt(s.minutesPerGame)} />
+            </View>
+            <View style={styles.statsRow}>
+              <StatBox label="SPG" value={fmt(s.stealsPerGame)} />
+              <StatBox label="BPG" value={fmt(s.blocksPerGame)} />
+              <StatBox label="TOV" value={fmt(s.turnoversPerGame)} />
+              <StatBox label="PF" value={fmt(s.foulsPerGame)} />
+            </View>
+            <View style={styles.statsRow}>
+              <StatBox label="OREB" value={fmt(s.offensiveReboundsPerGame)} />
+              <StatBox label="DREB" value={fmt(s.defensiveReboundsPerGame)} />
+              <StatBox label="GP" value={String(s.gamesPlayed)} />
+            </View>
           </View>
-          <View style={styles.statsRow}>
-            <StatBox label="SPG" value={s.stealsPerGame.toFixed(1)} />
-            <StatBox label="BPG" value={s.blocksPerGame.toFixed(1)} />
-            <StatBox label="FG%" value={`${(s.fieldGoalPct * 100).toFixed(1)}`} />
-            <StatBox label="3P%" value={`${(s.threePointPct * 100).toFixed(1)}`} />
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Shooting</Text>
+            <View style={styles.statsRow}>
+              <StatBox label="FG%" value={pct(s.fieldGoalPct)} />
+              <StatBox label="FGM-A" value={makeAttempt(s.fieldGoalsMade, s.fieldGoalsAttempted)} />
+              <StatBox label="3P%" value={pct(s.threePointPct)} />
+              <StatBox label="3PM-A" value={makeAttempt(s.threePointMade, s.threePointAttempted)} />
+            </View>
+            <View style={styles.statsRow}>
+              <StatBox label="FT%" value={pct(s.freeThrowPct)} />
+              <StatBox label="FTM-A" value={makeAttempt(s.freeThrowsMade, s.freeThrowsAttempted)} />
+              <StatBox label="eFG%" value={pct(s.effectiveFieldGoalPct)} />
+              <StatBox label="TS%" value={pct(s.trueShootingPct)} />
+            </View>
           </View>
-          <View style={styles.statsRow}>
-            <StatBox label="FT%" value={`${(s.freeThrowPct * 100).toFixed(1)}`} />
-            <StatBox label="GP" value={String(s.gamesPlayed)} />
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Advanced</Text>
+            <View style={styles.statsRow}>
+              <StatBox label="USG%" value={fmt(s.usage)} />
+              <StatBox label="ORtg" value={fmt(s.offensiveRating)} />
+              <StatBox label="DRtg" value={fmt(s.defensiveRating)} />
+              <StatBox label="Net" value={fmt(s.netRating)} />
+            </View>
+            <View style={styles.statsRow}>
+              <StatBox label="Win Shares" value={fmt(s.winShares)} />
+            </View>
           </View>
         </>
+      )}
+
+      {!s && (
+        <View style={styles.noStats}>
+          <Text style={styles.noStatsText}>No season stats synced yet for this player.</Text>
+        </View>
       )}
 
       <Pressable
@@ -91,16 +144,19 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   content: { padding: 16, gap: 16, paddingBottom: 40 },
   header: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
-  colorDot: { width: 20, height: 20, borderRadius: 10, marginTop: 4 },
   name: { color: colors.textPrimary, fontSize: 20, fontWeight: "700" },
   teamLink: { color: colors.accent, fontSize: 13, marginTop: 2, fontWeight: "600" },
   sub: { color: colors.textSecondary, fontSize: 13, marginTop: 2 },
   starText: { color: colors.textMuted, fontSize: 26 },
   starTextActive: { color: colors.accent },
+  section: { gap: 8 },
+  sectionTitle: { color: colors.textPrimary, fontSize: 15, fontWeight: "700" },
   statsRow: { flexDirection: "row", backgroundColor: colors.surface, borderRadius: 12, padding: 12 },
   statBox: { flex: 1, alignItems: "center" },
-  statValue: { color: colors.textPrimary, fontSize: 17, fontWeight: "700" },
+  statValue: { color: colors.textPrimary, fontSize: 16, fontWeight: "700" },
   statLabel: { color: colors.textMuted, fontSize: 11, marginTop: 2 },
+  noStats: { backgroundColor: colors.surface, borderRadius: 12, padding: 16 },
+  noStatsText: { color: colors.textSecondary, fontSize: 13, textAlign: "center" },
   chatButton: {
     backgroundColor: colors.surfaceAlt,
     borderRadius: 12,

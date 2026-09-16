@@ -28,7 +28,12 @@ playerMovesRouter.get("/", async (req, res) => {
       origin: m.originName ? { name: m.originName, conference: m.originConference } : null,
       destination: m.destinationName ? { name: m.destinationName, conference: m.destinationConference } : null,
       destinationTeam: m.destinationTeam
-        ? { id: m.destinationTeam.id, shortName: m.destinationTeam.shortName, primaryColor: m.destinationTeam.primaryColor }
+        ? {
+            id: m.destinationTeam.id,
+            shortName: m.destinationTeam.shortName,
+            primaryColor: m.destinationTeam.primaryColor,
+            logoUrl: m.destinationTeam.logoUrl,
+          }
         : null,
     })),
   });

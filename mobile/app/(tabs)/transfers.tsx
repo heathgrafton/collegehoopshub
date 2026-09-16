@@ -4,6 +4,7 @@ import { api, type PlayerMove } from "../../src/api/client";
 import { useApi } from "../../src/api/useApi";
 import { colors } from "../../src/theme/colors";
 import { EmptyView, ErrorView, LoadingView } from "../../src/components/StateViews";
+import { TeamLogo } from "../../src/components/TeamLogo";
 
 type Filter = "all" | "transfer" | "commitment";
 
@@ -17,7 +18,12 @@ function MoveCard({ move }: { move: PlayerMove }) {
         </Text>
         {move.stars ? <Text style={styles.stars}>{"★".repeat(move.stars)}</Text> : null}
       </View>
-      <Text style={styles.name}>{move.playerName}</Text>
+      <View style={styles.nameRow}>
+        {move.destinationTeam && (
+          <TeamLogo uri={move.destinationTeam.logoUrl} color={move.destinationTeam.primaryColor} size={22} />
+        )}
+        <Text style={styles.name}>{move.playerName}</Text>
+      </View>
       <Text style={styles.detail}>
         {move.position ? `${move.position} · ` : ""}
         {isTransfer
@@ -77,6 +83,7 @@ const styles = StyleSheet.create({
   badgeTransfer: { color: colors.accent },
   badgeCommit: { color: colors.textSecondary },
   stars: { color: colors.accent, fontSize: 11 },
+  nameRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   name: { color: colors.textPrimary, fontSize: 15, fontWeight: "700" },
   detail: { color: colors.textSecondary, fontSize: 13 },
 });

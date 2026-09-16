@@ -5,7 +5,7 @@
  * row with a console.warn, not crash the run. See types.ts for the
  * confidence caveat on these shapes.
  */
-import type { CbbdPlayerSeasonStat, CbbdRecruit, CbbdStatValue, CbbdTeamSeasonStat, CbbdTransfer } from "./types";
+import type { CbbdPlayerSeasonStat, CbbdRecruit, CbbdTeamSeasonStat, CbbdTransfer } from "./types";
 
 export type NormalizedTeamSeasonStat = {
   teamSchool: string;
@@ -18,6 +18,9 @@ export type NormalizedTeamSeasonStat = {
   assistsPerGame: number | null;
   netRating: number | null;
   strengthOfSchedule: number | null;
+  pace: number | null;
+  effectiveFieldGoalPct: number | null;
+  turnoversPerGame: number | null;
 };
 
 export type NormalizedPlayerSeasonStat = {
@@ -33,9 +36,26 @@ export type NormalizedPlayerSeasonStat = {
   stealsPerGame: number | null;
   blocksPerGame: number | null;
   minutesPerGame: number | null;
+  turnoversPerGame: number | null;
+  foulsPerGame: number | null;
+  offensiveReboundsPerGame: number | null;
+  defensiveReboundsPerGame: number | null;
   fieldGoalPct: number | null;
+  fieldGoalsMade: number | null;
+  fieldGoalsAttempted: number | null;
   threePointPct: number | null;
+  threePointMade: number | null;
+  threePointAttempted: number | null;
   freeThrowPct: number | null;
+  freeThrowsMade: number | null;
+  freeThrowsAttempted: number | null;
+  usage: number | null;
+  offensiveRating: number | null;
+  defensiveRating: number | null;
+  netRating: number | null;
+  effectiveFieldGoalPct: number | null;
+  trueShootingPct: number | null;
+  winShares: number | null;
 };
 
 export type NormalizedPlayerMove = {
@@ -100,18 +120,27 @@ export function mapRecruits(raw: CbbdRecruit[]): NormalizedPlayerMove[] {
   return out;
 }
 
-/** Reads a stat that might be a plain number or a `{ perGame, total }` object. */
-function readPerGame(value: CbbdStatValue): number | null {
-  if (value === undefined || value === null) return null;
-  if (typeof value === "number") return value;
-  return value.perGame ?? null;
+/** CBBD's season endpoints return totals, not per-game averages — divide here. */
+function perGame(total: number | null, games: number): number | null {
+  if (total === null || games <= 0) return null;
+  return total / games;
+}
+
+/**
+ * CBBD mixes 0-100 and 0-1 scales for percentages, inconsistently, even
+ * within the same object (verified live: fieldGoals.pct is 48.2, but the
+ * same player's trueShootingPct is 0.636). This app stores/displays every
+ * percentage as a 0-1 fraction, so the 0-100 ones need dividing down.
+ */
+function pctFrom100(value: number | null): number | null {
+  return value === null ? null : value / 100;
 }
 
 export function mapTeamSeasonStats(raw: CbbdTeamSeasonStat[]): NormalizedTeamSeasonStat[] {
   const out: NormalizedTeamSeasonStat[] = [];
   for (const t of raw) {
-    if (!t.team || t.season === undefined) {
-      console.warn("[cbbd] skipping team season stat with missing team/season", t);
+    if (!t.team || t.season === undefined || !t.teamStats) {
+      console.warn("[cbbd] skipping team season stat with missing team/season/stats", t);
       continue;
     }
     out.push({
@@ -119,12 +148,16 @@ export function mapTeamSeasonStats(raw: CbbdTeamSeasonStat[]): NormalizedTeamSea
       season: t.season,
       wins: t.wins ?? 0,
       losses: t.losses ?? 0,
-      pointsPerGame: readPerGame(t.points),
-      opponentPointsPerGame: readPerGame(t.opponentPoints),
-      reboundsPerGame: readPerGame(t.rebounds),
-      assistsPerGame: readPerGame(t.assists),
-      netRating: t.netRating ?? null,
-      strengthOfSchedule: t.strengthOfSchedule ?? t.sos ?? null,
+      pointsPerGame: perGame(t.teamStats.points.total, t.games),
+      opponentPointsPerGame: perGame(t.opponentStats?.points.total ?? null, t.games),
+      reboundsPerGame: perGame(t.teamStats.rebounds.total, t.games),
+      assistsPerGame: perGame(t.teamStats.assists, t.games),
+      netRating: t.teamStats.rating !== null && t.opponentStats?.rating != null ? t.teamStats.rating - t.opponentStats.rating : null,
+      // CBBD's season-stats endpoints don't include a strength-of-schedule figure.
+      strengthOfSchedule: null,
+      pace: t.pace,
+      effectiveFieldGoalPct: pctFrom100(t.teamStats.fourFactors.effectiveFieldGoalPct),
+      turnoversPerGame: perGame(t.teamStats.turnovers.total, t.games),
     });
   }
   return out;
@@ -138,6 +171,7 @@ export function mapPlayerSeasonStats(raw: CbbdPlayerSeasonStat[]): NormalizedPla
       continue;
     }
     const [firstName, ...rest] = p.name.trim().split(" ");
+    const g = p.games;
 
     out.push({
       athleteId: String(p.athleteId),
@@ -145,16 +179,33 @@ export function mapPlayerSeasonStats(raw: CbbdPlayerSeasonStat[]): NormalizedPla
       lastName: rest.join(" "),
       teamSchool: p.team,
       season: p.season,
-      gamesPlayed: p.games ?? 0,
-      pointsPerGame: readPerGame(p.points),
-      reboundsPerGame: readPerGame(p.rebounds),
-      assistsPerGame: readPerGame(p.assists),
-      stealsPerGame: readPerGame(p.steals),
-      blocksPerGame: readPerGame(p.blocks),
-      minutesPerGame: readPerGame(p.minutes),
-      fieldGoalPct: p.fieldGoalPct ?? p.fieldGoals?.pct ?? null,
-      threePointPct: p.threePointPct ?? p.threePointFieldGoals?.pct ?? null,
-      freeThrowPct: p.freeThrowPct ?? p.freeThrows?.pct ?? null,
+      gamesPlayed: g,
+      pointsPerGame: perGame(p.points, g),
+      reboundsPerGame: perGame(p.rebounds.total, g),
+      assistsPerGame: perGame(p.assists, g),
+      stealsPerGame: perGame(p.steals, g),
+      blocksPerGame: perGame(p.blocks, g),
+      minutesPerGame: perGame(p.minutes, g),
+      turnoversPerGame: perGame(p.turnovers, g),
+      foulsPerGame: perGame(p.fouls, g),
+      offensiveReboundsPerGame: perGame(p.rebounds.offensive, g),
+      defensiveReboundsPerGame: perGame(p.rebounds.defensive, g),
+      fieldGoalPct: pctFrom100(p.fieldGoals.pct),
+      fieldGoalsMade: p.fieldGoals.made,
+      fieldGoalsAttempted: p.fieldGoals.attempted,
+      threePointPct: pctFrom100(p.threePointFieldGoals.pct),
+      threePointMade: p.threePointFieldGoals.made,
+      threePointAttempted: p.threePointFieldGoals.attempted,
+      freeThrowPct: pctFrom100(p.freeThrows.pct),
+      freeThrowsMade: p.freeThrows.made,
+      freeThrowsAttempted: p.freeThrows.attempted,
+      usage: p.usage,
+      offensiveRating: p.offensiveRating,
+      defensiveRating: p.defensiveRating,
+      netRating: p.netRating,
+      effectiveFieldGoalPct: pctFrom100(p.effectiveFieldGoalPct),
+      trueShootingPct: p.trueShootingPct,
+      winShares: p.winShares.total,
     });
   }
   return out;

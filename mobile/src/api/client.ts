@@ -73,7 +73,7 @@ export const api = {
 
 export type Conference = { id: string; name: string; shortName: string };
 
-export type TeamRef = { id: string; name: string; shortName: string; primaryColor: string };
+export type TeamRef = { id: string; name: string; shortName: string; primaryColor: string; logoUrl: string | null };
 
 export type GameSummary = {
   id: string;
@@ -100,6 +100,7 @@ export type TeamSummary = {
   shortName: string;
   nickname: string;
   primaryColor: string;
+  logoUrl: string | null;
   conference: Conference;
   record: TeamRecord | null;
 };
@@ -111,6 +112,7 @@ export type PlayerListItem = {
   jerseyNumber: string;
   position: string;
   classYear: string;
+  photoUrl: string | null;
   team: TeamRef & { conference: Conference };
   pointsPerGame: number | null;
   reboundsPerGame: number | null;
@@ -127,7 +129,7 @@ export type PlayerMove = {
   rating: number | null;
   origin: { name: string | null; conference: string | null } | null;
   destination: { name: string | null; conference: string | null } | null;
-  destinationTeam: { id: string; shortName: string; primaryColor: string } | null;
+  destinationTeam: { id: string; shortName: string; primaryColor: string; logoUrl: string | null } | null;
 };
 
 export type RosterPlayer = {
@@ -137,6 +139,7 @@ export type RosterPlayer = {
   jerseyNumber: string;
   position: string;
   classYear: string;
+  photoUrl: string | null;
   pointsPerGame: number | null;
   reboundsPerGame: number | null;
   assistsPerGame: number | null;
@@ -152,6 +155,9 @@ export type TeamDetail = TeamSummary & {
     assistsPerGame: number | null;
     netRating: number | null;
     strengthOfSchedule: number | null;
+    pace: number | null;
+    effectiveFieldGoalPct: number | null;
+    turnoversPerGame: number | null;
   } | null;
   roster: RosterPlayer[];
   recentGames: {
@@ -179,7 +185,15 @@ export type PlayerDetail = {
   heightInches: number;
   classYear: string;
   hometown: string;
-  team: { id: string; name: string; shortName: string; primaryColor: string; conference: { id: string; name: string } };
+  photoUrl: string | null;
+  team: {
+    id: string;
+    name: string;
+    shortName: string;
+    primaryColor: string;
+    logoUrl: string | null;
+    conference: { id: string; name: string };
+  };
   seasonStats: {
     gamesPlayed: number;
     pointsPerGame: number;
@@ -188,9 +202,26 @@ export type PlayerDetail = {
     stealsPerGame: number;
     blocksPerGame: number;
     minutesPerGame: number;
+    turnoversPerGame: number | null;
+    foulsPerGame: number | null;
+    offensiveReboundsPerGame: number | null;
+    defensiveReboundsPerGame: number | null;
     fieldGoalPct: number;
+    fieldGoalsMade: number | null;
+    fieldGoalsAttempted: number | null;
     threePointPct: number;
+    threePointMade: number | null;
+    threePointAttempted: number | null;
     freeThrowPct: number;
+    freeThrowsMade: number | null;
+    freeThrowsAttempted: number | null;
+    usage: number | null;
+    offensiveRating: number | null;
+    defensiveRating: number | null;
+    netRating: number | null;
+    effectiveFieldGoalPct: number | null;
+    trueShootingPct: number | null;
+    winShares: number | null;
   } | null;
 };
 

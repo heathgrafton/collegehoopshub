@@ -1,16 +1,9 @@
 /**
- * Loose types for CollegeBasketballData.com's REST API
- * (api.collegebasketballdata.com). Unlike ESPN's hidden API, CBBD publishes
- * an OpenAPI/Swagger spec — but this sandbox has no network access to
- * fetch and check it against, so these shapes are still reconstructed from
- * general knowledge (CBBD is built by the same author as
- * CollegeFootballData.com and follows a similar stats-endpoint convention)
- * rather than a verified live response. Confidence here is lower than the
- * ESPN types — expect to adjust field paths after the first real run.
- *
- * Every numeric stat field is typed as possibly nested (`{ perGame }`) or
- * flat, because it's genuinely unclear from memory which CBBD uses; see
- * mappers.ts's `readStat` helper, which tries both.
+ * Types for CollegeBasketballData.com's REST API (api.collegebasketballdata.com).
+ * CbbdTeam/CbbdConference below are unverified guesses and currently unused
+ * (fetchTeams/fetchConferences are dead code — nothing calls them). Everything
+ * from CbbdTeamSeasonStat onward is checked against the live OpenAPI spec and
+ * live sample responses (2026-09-16) — see the per-type notes.
  */
 
 export type CbbdTeam = {
@@ -34,25 +27,46 @@ export type CbbdConference = {
   shortName?: string;
 };
 
-export type CbbdStatValue = number | { perGame?: number; total?: number } | undefined;
+// Verified against CBBD's live OpenAPI spec (api.collegebasketballdata.com/api-docs.json)
+// on 2026-09-16: /stats/team/season and /stats/player/season return season
+// TOTALS (not per-game averages) — the mapper divides by `games` itself.
+type CbbdShootingSplit = { made: number | null; attempted: number | null; pct: number | null };
+type CbbdReboundSplit = { total: number | null; offensive: number | null; defensive: number | null };
+
+export type CbbdTeamSeasonUnitStats = {
+  fieldGoals: CbbdShootingSplit;
+  twoPointFieldGoals: CbbdShootingSplit;
+  threePointFieldGoals: CbbdShootingSplit;
+  freeThrows: CbbdShootingSplit;
+  rebounds: CbbdReboundSplit;
+  turnovers: { total: number | null; teamTotal: number | null };
+  fouls: { total: number | null; technical: number | null; flagrant: number | null };
+  points: { total: number | null; inPaint: number | null; offTurnovers: number | null; fastBreak: number | null };
+  fourFactors: {
+    effectiveFieldGoalPct: number | null;
+    turnoverRatio: number | null;
+    offensiveReboundPct: number | null;
+    freeThrowRate: number | null;
+  };
+  assists: number | null;
+  blocks: number | null;
+  steals: number | null;
+  possessions: number | null;
+  rating: number | null;
+  trueShooting: number | null;
+};
 
 export type CbbdTeamSeasonStat = {
-  season?: number;
-  teamId?: number;
-  team?: string;
-  conference?: string;
-  games?: number;
-  wins?: number;
-  losses?: number;
-  points?: CbbdStatValue;
-  opponentPoints?: CbbdStatValue;
-  rebounds?: CbbdStatValue;
-  assists?: CbbdStatValue;
-  netRating?: number;
-  offensiveRating?: number;
-  defensiveRating?: number;
-  strengthOfSchedule?: number;
-  sos?: number;
+  season: number;
+  teamId: number;
+  team: string;
+  conference: string | null;
+  games: number;
+  wins: number;
+  losses: number;
+  pace: number | null;
+  teamStats: CbbdTeamSeasonUnitStats;
+  opponentStats: CbbdTeamSeasonUnitStats;
 };
 
 // Verified against CBBD's live OpenAPI spec (api.collegebasketballdata.com/api-docs.json)
@@ -84,22 +98,28 @@ export type CbbdRecruit = {
 };
 
 export type CbbdPlayerSeasonStat = {
-  season?: number;
-  athleteId?: number;
-  name?: string;
-  team?: string;
-  position?: string;
-  games?: number;
-  minutes?: CbbdStatValue;
-  points?: CbbdStatValue;
-  rebounds?: CbbdStatValue;
-  assists?: CbbdStatValue;
-  steals?: CbbdStatValue;
-  blocks?: CbbdStatValue;
-  fieldGoalPct?: number;
-  threePointPct?: number;
-  freeThrowPct?: number;
-  fieldGoals?: { pct?: number };
-  threePointFieldGoals?: { pct?: number };
-  freeThrows?: { pct?: number };
+  season: number;
+  athleteId: number;
+  name: string;
+  team: string;
+  position: string;
+  games: number;
+  minutes: number;
+  points: number | null;
+  turnovers: number | null;
+  fouls: number | null;
+  assists: number | null;
+  steals: number | null;
+  blocks: number | null;
+  usage: number | null;
+  offensiveRating: number | null;
+  defensiveRating: number | null;
+  netRating: number | null;
+  effectiveFieldGoalPct: number | null;
+  trueShootingPct: number | null;
+  fieldGoals: CbbdShootingSplit;
+  threePointFieldGoals: CbbdShootingSplit;
+  freeThrows: CbbdShootingSplit;
+  rebounds: CbbdReboundSplit;
+  winShares: { total: number | null; offensive: number | null; defensive: number | null; totalPer40: number | null };
 };

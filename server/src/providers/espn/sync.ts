@@ -8,7 +8,12 @@ import {
   mapTeamsFromStandings,
 } from "./mappers";
 
-const CURRENT_SEASON = new Date().getMonth() >= 6 ? new Date().getFullYear() + 1 : new Date().getFullYear();
+// Matches the CBBD sync and the API routes' season number: ESPN's standings
+// endpoint (called with no explicit season) already defaults to the most
+// recently completed season, which CBBD and the routes both label by its
+// ending year — so this needs the same convention, not a +1 shift onto a
+// season that hasn't been played yet.
+const CURRENT_SEASON = new Date().getFullYear();
 
 /** Upserts every conference + team + current record from ESPN standings. */
 export async function syncConferencesAndTeams(season?: number) {
@@ -45,6 +50,7 @@ export async function syncConferencesAndTeams(season?: number) {
         city: t.city,
         state: t.state,
         primaryColor: t.primaryColor,
+        logoUrl: t.logoUrl,
         conferenceId,
       },
       update: {
@@ -52,6 +58,7 @@ export async function syncConferencesAndTeams(season?: number) {
         shortName: t.shortName,
         nickname: t.nickname,
         primaryColor: t.primaryColor,
+        logoUrl: t.logoUrl,
         conferenceId,
       },
     });
@@ -137,6 +144,7 @@ export async function syncRosters() {
   const teams = await prisma.team.findMany({ where: { espnId: { not: null } } });
   console.log(`[espn] syncing rosters for ${teams.length} teams`);
 
+  let pruned = 0;
   for (const team of teams) {
     if (!team.espnId) continue;
     try {
@@ -155,6 +163,7 @@ export async function syncRosters() {
             heightInches: p.heightInches,
             classYear: p.classYear,
             hometown: p.hometown,
+            photoUrl: p.photoUrl,
           },
           update: {
             teamId: team.id,
@@ -165,12 +174,27 @@ export async function syncRosters() {
             heightInches: p.heightInches,
             classYear: p.classYear,
             hometown: p.hometown,
+            photoUrl: p.photoUrl,
           },
         });
       }
+
+      // A player who left this team (graduated, transferred, quit) won't be in
+      // this fetch. If they moved to another D-I team, that team's own sync
+      // will already have re-upserted them onto its own roster by espnId — so
+      // it's always safe to drop anyone left on THIS team that the fetch didn't
+      // return, without racing a transfer onto the wrong side.
+      const currentEspnIds = players.map((p) => p.espnId);
+      const { count } = await prisma.player.deleteMany({
+        where: { teamId: team.id, espnId: { notIn: currentEspnIds } },
+      });
+      pruned += count;
     } catch (err) {
       console.warn(`[espn] failed to sync roster for team ${team.shortName} (${team.espnId}): ${(err as Error).message}`);
     }
+  }
+  if (pruned > 0) {
+    console.log(`[espn] pruned ${pruned} player(s) no longer on their team's roster`);
   }
   console.log("[espn] roster sync complete");
 }

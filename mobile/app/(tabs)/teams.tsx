@@ -6,6 +6,7 @@ import { useApi } from "../../src/api/useApi";
 import { useFavorites } from "../../src/favorites/FavoritesContext";
 import { colors } from "../../src/theme/colors";
 import { EmptyView, ErrorView, LoadingView } from "../../src/components/StateViews";
+import { TeamLogo } from "../../src/components/TeamLogo";
 
 export default function TeamsScreen() {
   const { state: confState } = useApi(() => api.getConferences(), []);
@@ -77,7 +78,7 @@ function TeamRow({ team }: { team: TeamSummary }) {
   return (
     <Link href={`/team/${team.id}`} asChild>
       <Pressable style={styles.teamCard}>
-        <View style={[styles.colorDot, { backgroundColor: team.primaryColor }]} />
+        <TeamLogo uri={team.logoUrl} color={team.primaryColor} />
         <View style={styles.teamInfo}>
           <Text style={styles.teamName}>{team.name}</Text>
           <Text style={styles.teamSub}>{team.conference.shortName}</Text>
@@ -130,7 +131,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     gap: 12,
   },
-  colorDot: { width: 14, height: 14, borderRadius: 7 },
   teamInfo: { flex: 1 },
   teamName: { color: colors.textPrimary, fontSize: 15, fontWeight: "600" },
   teamSub: { color: colors.textMuted, fontSize: 12, marginTop: 2 },

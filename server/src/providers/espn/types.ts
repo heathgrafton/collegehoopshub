@@ -28,6 +28,9 @@ export type EspnStandingsEntry = {
     displayName?: string;
     shortDisplayName?: string;
     color?: string;
+    // Verified live (site.web.api.espn.com standings, 2026-09-16): each team
+    // carries a `logos` array; the first entry is the standard full-color mark.
+    logos?: { href?: string }[];
   };
   stats?: { name?: string; value?: number; displayValue?: string }[];
 };
@@ -87,6 +90,8 @@ export type EspnAthlete = {
   height?: number; // inches
   experience?: { years?: number; displayValue?: string };
   birthPlace?: { city?: string; state?: string; country?: string };
+  // Verified live (roster endpoint, 2026-09-16): full headshot PNG per athlete.
+  headshot?: { href?: string };
 };
 
 export type EspnNewsResponse = {

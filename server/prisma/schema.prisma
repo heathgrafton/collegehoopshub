@@ -27,6 +27,7 @@ model Team {
   city          String
   state         String
   primaryColor  String
+  logoUrl       String?
   conferenceId  String
   conference    Conference   @relation(fields: [conferenceId], references: [id])
   players       Player[]
@@ -53,6 +54,7 @@ model Player {
   heightInches  Int
   classYear     String // Fr, So, Jr, Sr, Gr
   hometown      String
+  photoUrl      String?
   seasonStats   PlayerSeasonStat[]
   chatMessages  ChatMessage[]
   favorites     Favorite[]
@@ -86,7 +88,7 @@ model Game {
 model PlayerSeasonStat {
   id           String  @id @default(cuid())
   playerId     String
-  player       Player  @relation(fields: [playerId], references: [id])
+  player       Player  @relation(fields: [playerId], references: [id], onDelete: Cascade)
   season       Int
   gamesPlayed  Int
   pointsPerGame     Float
@@ -98,6 +100,24 @@ model PlayerSeasonStat {
   fieldGoalPct      Float
   threePointPct     Float
   freeThrowPct      Float
+  // Advanced stats, from CBBD's season totals divided by games played.
+  turnoversPerGame        Float?
+  foulsPerGame            Float?
+  offensiveReboundsPerGame Float?
+  defensiveReboundsPerGame Float?
+  fieldGoalsMade          Float?
+  fieldGoalsAttempted     Float?
+  threePointMade          Float?
+  threePointAttempted     Float?
+  freeThrowsMade          Float?
+  freeThrowsAttempted     Float?
+  usage                   Float?
+  offensiveRating         Float?
+  defensiveRating         Float?
+  netRating               Float?
+  effectiveFieldGoalPct   Float?
+  trueShootingPct         Float?
+  winShares               Float?
 
   @@unique([playerId, season])
 }
@@ -119,6 +139,9 @@ model TeamSeasonStat {
   assistsPerGame    Float?
   netRating         Float?
   strengthOfSchedule Float?
+  pace                  Float?
+  effectiveFieldGoalPct Float?
+  turnoversPerGame      Float?
 
   @@unique([teamId, season])
 }
@@ -182,7 +205,7 @@ model Favorite {
   teamId       String?
   team         Team?   @relation(fields: [teamId], references: [id])
   playerId     String?
-  player       Player? @relation(fields: [playerId], references: [id])
+  player       Player? @relation(fields: [playerId], references: [id], onDelete: Cascade)
   conferenceName String?
   createdAt    DateTime @default(now())
 
@@ -194,7 +217,7 @@ model ChatMessage {
   gameId    String?
   game      Game?    @relation(fields: [gameId], references: [id])
   playerId  String?
-  player    Player?  @relation(fields: [playerId], references: [id])
+  player    Player?  @relation(fields: [playerId], references: [id], onDelete: Cascade)
   userId    String
   user      User     @relation(fields: [userId], references: [id])
   body      String

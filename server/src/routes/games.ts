@@ -3,12 +3,13 @@ import { prisma } from "../prisma";
 
 export const gamesRouter = Router();
 
-function serializeTeam(team: { id: string; name: string; shortName: string; primaryColor: string }) {
+function serializeTeam(team: { id: string; name: string; shortName: string; primaryColor: string; logoUrl: string | null }) {
   return {
     id: team.id,
     name: team.name,
     shortName: team.shortName,
     primaryColor: team.primaryColor,
+    logoUrl: team.logoUrl,
   };
 }
 
