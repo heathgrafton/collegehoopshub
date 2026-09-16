@@ -11,7 +11,9 @@
     "seed": "tsx prisma/seed.ts",
     "sync:espn": "tsx src/sync-espn.ts",
     "sync:scoreboard": "tsx src/sync-scoreboard.ts",
+    "sync:cbbd": "tsx src/sync-cbbd.ts",
     "test:espn-mappers": "tsx src/providers/espn/__fixtures__/run.ts",
+    "test:cbbd-mappers": "tsx src/providers/cbbd/__fixtures__/run.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

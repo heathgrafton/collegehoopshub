@@ -1,0 +1,36 @@
+[
+  {
+    "season": 2026,
+    "athleteId": 5107157,
+    "name": "Cooper Flagg",
+    "team": "Duke",
+    "position": "F",
+    "games": 25,
+    "minutes": { "perGame": 33.2 },
+    "points": { "perGame": 19.8 },
+    "rebounds": { "perGame": 8.4 },
+    "assists": { "perGame": 4.1 },
+    "steals": { "perGame": 1.5 },
+    "blocks": { "perGame": 1.6 },
+    "fieldGoalPct": 0.487,
+    "threePointPct": 0.381,
+    "freeThrowPct": 0.812
+  },
+  {
+    "season": 2026,
+    "athleteId": 9999999,
+    "name": "Nobody Fromnowhere",
+    "team": "Some Unmatched School",
+    "position": "G",
+    "games": 10,
+    "minutes": 20.0,
+    "points": 5.0,
+    "rebounds": 2.0,
+    "assists": 1.0,
+    "steals": 0.5,
+    "blocks": 0.1,
+    "fieldGoalPct": 0.4,
+    "threePointPct": 0.3,
+    "freeThrowPct": 0.7
+  }
+]

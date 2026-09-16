@@ -20,6 +20,7 @@ model Conference {
 model Team {
   id            String       @id @default(cuid())
   espnId        String?      @unique // ESPN team id, when sourced from ESPN
+  cbbdId        String?      @unique // CollegeBasketballData.com team id, once matched
   name          String
   shortName     String
   nickname      String
@@ -41,6 +42,7 @@ model Team {
 model Player {
   id            String   @id @default(cuid())
   espnId        String?  @unique // ESPN athlete id, when sourced from ESPN
+  cbbdId        String?  @unique // CollegeBasketballData.com athlete id, once matched
   teamId        String
   team          Team     @relation(fields: [teamId], references: [id])
   firstName     String
