@@ -5,6 +5,10 @@ import { useApi } from "../../src/api/useApi";
 import { colors } from "../../src/theme/colors";
 import { ErrorView, LoadingView } from "../../src/components/StateViews";
 
+function fmt(value: number | null | undefined, digits = 1): string {
+  return value === null || value === undefined ? "–" : value.toFixed(digits);
+}
+
 function StatBox({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.statBox}>
@@ -60,10 +64,10 @@ export default function TeamDetailScreen() {
         <View style={styles.statsRow}>
           <StatBox label="Record" value={`${team.record.wins}-${team.record.losses}`} />
           <StatBox label="Conf." value={`${team.record.conferenceWins}-${team.record.conferenceLosses}`} />
-          {team.seasonStats && (
+          {team.seasonStats && (team.seasonStats.pointsPerGame !== null || team.seasonStats.opponentPointsPerGame !== null) && (
             <>
-              <StatBox label="PPG" value={team.seasonStats.pointsPerGame.toFixed(1)} />
-              <StatBox label="Opp PPG" value={team.seasonStats.opponentPointsPerGame.toFixed(1)} />
+              <StatBox label="PPG" value={fmt(team.seasonStats.pointsPerGame)} />
+              <StatBox label="Opp PPG" value={fmt(team.seasonStats.opponentPointsPerGame)} />
             </>
           )}
         </View>

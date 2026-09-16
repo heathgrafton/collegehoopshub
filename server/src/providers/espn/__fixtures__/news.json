@@ -1,0 +1,21 @@
+{
+  "header": "NCAAM News",
+  "articles": [
+    {
+      "id": 44444001,
+      "headline": "Cooper Flagg named National Player of the Week",
+      "description": "Duke's freshman phenom posted back-to-back 25-point games in wins over top-15 opponents.",
+      "published": "2026-02-14T12:00Z",
+      "images": [{ "url": "https://a.espncdn.com/example.jpg" }],
+      "categories": [{ "team": { "id": "150" } }]
+    },
+    {
+      "id": 44444002,
+      "headline": "Selection Sunday looms as bubble teams jockey for position",
+      "description": "With three weeks left in the regular season, the bracket picture is starting to take shape.",
+      "published": "2026-02-13T09:00Z",
+      "images": [],
+      "categories": []
+    }
+  ]
+}

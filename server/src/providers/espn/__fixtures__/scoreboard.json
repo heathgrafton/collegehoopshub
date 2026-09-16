@@ -1,0 +1,98 @@
+{
+  "events": [
+    {
+      "id": "401585865",
+      "date": "2026-02-15T00:00Z",
+      "name": "Duke Blue Devils at North Carolina Tar Heels",
+      "shortName": "DUKE @ UNC",
+      "competitions": [
+        {
+          "venue": { "fullName": "Dean E. Smith Center" },
+          "status": {
+            "displayClock": "9:33",
+            "period": 2,
+            "type": { "state": "in", "completed": false }
+          },
+          "broadcasts": [{ "names": ["ESPN"] }],
+          "competitors": [
+            {
+              "id": "1",
+              "homeAway": "home",
+              "score": "64",
+              "team": {
+                "id": "153",
+                "location": "North Carolina",
+                "name": "Tar Heels",
+                "abbreviation": "UNC",
+                "displayName": "North Carolina Tar Heels",
+                "shortDisplayName": "UNC",
+                "color": "7BAFD4"
+              }
+            },
+            {
+              "id": "2",
+              "homeAway": "away",
+              "score": "62",
+              "team": {
+                "id": "150",
+                "location": "Duke",
+                "name": "Blue Devils",
+                "abbreviation": "DUKE",
+                "displayName": "Duke Blue Devils",
+                "shortDisplayName": "Duke",
+                "color": "003087"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401585900",
+      "date": "2026-02-15T23:00Z",
+      "name": "Purdue Boilermakers at Michigan State Spartans",
+      "shortName": "PUR @ MSU",
+      "competitions": [
+        {
+          "venue": { "fullName": "Breslin Center" },
+          "status": {
+            "displayClock": "20:00",
+            "period": 0,
+            "type": { "state": "pre", "completed": false }
+          },
+          "broadcasts": [{ "names": ["FS1"] }],
+          "competitors": [
+            {
+              "id": "3",
+              "homeAway": "home",
+              "score": "0",
+              "team": {
+                "id": "127",
+                "location": "Michigan State",
+                "name": "Spartans",
+                "abbreviation": "MSU",
+                "displayName": "Michigan State Spartans",
+                "shortDisplayName": "Michigan St.",
+                "color": "18453B"
+              }
+            },
+            {
+              "id": "4",
+              "homeAway": "away",
+              "score": "0",
+              "team": {
+                "id": "2509",
+                "location": "Purdue",
+                "name": "Boilermakers",
+                "abbreviation": "PUR",
+                "displayName": "Purdue Boilermakers",
+                "shortDisplayName": "Purdue",
+                "color": "CEB888"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

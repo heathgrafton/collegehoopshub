@@ -105,12 +105,12 @@ export type TeamDetail = TeamSummary & {
   city: string;
   state: string;
   seasonStats: {
-    pointsPerGame: number;
-    opponentPointsPerGame: number;
-    reboundsPerGame: number;
-    assistsPerGame: number;
-    netRating: number;
-    strengthOfSchedule: number;
+    pointsPerGame: number | null;
+    opponentPointsPerGame: number | null;
+    reboundsPerGame: number | null;
+    assistsPerGame: number | null;
+    netRating: number | null;
+    strengthOfSchedule: number | null;
   } | null;
   roster: RosterPlayer[];
   recentGames: {

@@ -1,0 +1,37 @@
+{
+  "team": { "id": "150", "displayName": "Duke Blue Devils" },
+  "athletes": [
+    {
+      "position": "Guards",
+      "items": [
+        {
+          "id": "5104234",
+          "firstName": "Kon",
+          "lastName": "Knueppel",
+          "fullName": "Kon Knueppel",
+          "jersey": "7",
+          "position": { "abbreviation": "G" },
+          "height": 78,
+          "experience": { "years": 0, "displayValue": "Fr" },
+          "birthPlace": { "city": "Wisconsin Rapids", "state": "WI", "country": "USA" }
+        }
+      ]
+    },
+    {
+      "position": "Forwards",
+      "items": [
+        {
+          "id": "5107157",
+          "firstName": "Cooper",
+          "lastName": "Flagg",
+          "fullName": "Cooper Flagg",
+          "jersey": "2",
+          "position": { "abbreviation": "F" },
+          "height": 81,
+          "experience": { "years": 0, "displayValue": "Fr" },
+          "birthPlace": { "city": "Newport", "state": "ME", "country": "USA" }
+        }
+      ]
+    }
+  ]
+}

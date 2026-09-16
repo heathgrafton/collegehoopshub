@@ -1,0 +1,73 @@
+{
+  "children": [
+    {
+      "id": "2",
+      "name": "Atlantic Coast Conference",
+      "abbreviation": "ACC",
+      "standings": {
+        "entries": [
+          {
+            "team": {
+              "id": "150",
+              "location": "Duke",
+              "name": "Blue Devils",
+              "abbreviation": "DUKE",
+              "displayName": "Duke Blue Devils",
+              "shortDisplayName": "Duke",
+              "color": "003087"
+            },
+            "stats": [
+              { "name": "wins", "value": 21, "displayValue": "21" },
+              { "name": "losses", "value": 4, "displayValue": "4" },
+              { "name": "vsConf_wins", "value": 12, "displayValue": "12" },
+              { "name": "vsConf_losses", "value": 3, "displayValue": "3" }
+            ]
+          },
+          {
+            "team": {
+              "id": "153",
+              "location": "North Carolina",
+              "name": "Tar Heels",
+              "abbreviation": "UNC",
+              "displayName": "North Carolina Tar Heels",
+              "shortDisplayName": "UNC",
+              "color": "7BAFD4"
+            },
+            "stats": [
+              { "name": "wins", "value": 18, "displayValue": "18" },
+              { "name": "losses", "value": 7, "displayValue": "7" },
+              { "name": "vsConf_wins", "value": 10, "displayValue": "10" },
+              { "name": "vsConf_losses", "value": 5, "displayValue": "5" }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "4",
+      "name": "Big Ten Conference",
+      "abbreviation": "B1G",
+      "standings": {
+        "entries": [
+          {
+            "team": {
+              "id": "2509",
+              "location": "Purdue",
+              "name": "Boilermakers",
+              "abbreviation": "PUR",
+              "displayName": "Purdue Boilermakers",
+              "shortDisplayName": "Purdue",
+              "color": "CEB888"
+            },
+            "stats": [
+              { "name": "wins", "value": 22, "displayValue": "22" },
+              { "name": "losses", "value": 3, "displayValue": "3" },
+              { "name": "vsConf_wins", "value": 14, "displayValue": "14" },
+              { "name": "vsConf_losses", "value": 1, "displayValue": "1" }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -23,24 +23,70 @@ The mobile app never talks to the database directly — it only calls the
 `server` HTTP API. That keeps a real data provider swap (below) contained
 to one side.
 
-## A note on live data
+## Live data: ESPN integration (in progress)
 
-This build was developed in a network-restricted sandbox that only allows
-npm/GitHub/package-registry traffic — it could not reach any sports-data
-API (ESPN's public endpoints, CollegeBasketballData.com, SportsDataIO, etc.
-were all blocked at the network policy level, confirmed while building this).
-So for now, `server` serves realistic **mock data** — real D1 team and
-player names, but fabricated scores/stats — shaped exactly like what a real
-provider would return, seeded via `server/prisma/seed.ts`.
+`server/src/providers/espn/` is a real integration against ESPN's
+unofficial "site API" (free, no key required, `site.api.espn.com/.../mens-college-basketball/...`).
+It's an **ingestion layer**, not a live proxy: sync jobs pull from ESPN and
+upsert into the same Prisma tables the mock seed uses (matched by a new
+`espnId` column on `Conference`/`Team`/`Player`/`Game`/`NewsArticle`), so
+`server/src/routes/*.ts` and the mobile app don't change at all — they just
+start returning real rows instead of seeded ones.
 
-**Every screen carries a small "Demo data" label** so nobody mistakes it for
-a live feed. Swapping in a real provider later only touches
-`server/src/routes/*.ts` (replace the Prisma queries with calls to the
-provider, keeping the same response shape) — the mobile app doesn't change.
-Good candidates to evaluate first: ESPN's unofficial site API (free, no
-key, widely used, no formal SLA), CollegeBasketballData.com (free tier,
-richer advanced stats, requires an API key), or SportsDataIO (paid, official
-support/SLA).
+**This has not been run against a live ESPN response.** This sandbox's
+network policy blocks all external hosts except npm/GitHub/package
+registries (confirmed against ESPN, Google, and CollegeBasketballData.com
+while building this) — there is no way to make a real HTTP call to ESPN
+from here. So:
+
+- `server/src/providers/espn/types.ts` and `mappers.ts` are built from
+  general knowledge of these endpoints' shapes, not a verified live sample.
+- `npm run test:espn-mappers` (in `server/`) runs the parsing logic against
+  hand-built fixture JSON in `__fixtures__/` that approximates what ESPN
+  returns — it passes today, but it can only catch mapper bugs, not "the
+  real API doesn't actually look like this."
+- Fields most likely to need adjustment once tested for real: the
+  conference-record stat key names in `mappers.ts` (`findStat` candidate
+  lists for `wins`/`losses`/conference record), and `classYearFromExperience`
+  (Fr/So/Jr/Sr derivation) — both are called out with comments at their
+  definition.
+
+**To actually turn this on**, from a machine with normal internet access:
+
+```bash
+cd server
+npm run sync:espn          # full sync: conferences, teams, records, rosters, today's games, news
+npm run dev                # serves the now-real data — no route/mobile changes needed
+```
+
+Then during game windows, keep scores fresh with:
+
+```bash
+npm run sync:scoreboard -- --watch   # polls ESPN every 60s and upserts score changes
+```
+
+If something looks wrong (a stat is always 0, a name is malformed), the
+sync scripts `console.warn` on every row they skip or can't fully parse —
+start there, then adjust the corresponding `map*` function in `mappers.ts`
+and its fixture in `__fixtures__/` to match reality.
+
+Not synced from ESPN yet: per-team/per-player advanced season stats (PPG,
+RPG, etc. beyond win-loss record) — the standings endpoint doesn't carry
+them and the athlete-stats endpoint's shape is the part of ESPN's API I'm
+least confident about without a live sample to check. `TeamSeasonStat`'s
+advanced fields are nullable for exactly this reason; the UI already
+renders "–" when they're missing. `PlayerSeasonStat` rows simply aren't
+created by the ESPN sync yet, same as before.
+
+Other providers worth evaluating alongside/instead of ESPN: CollegeBasketballData.com
+(free tier, richer advanced stats incl. NET/efficiency — a better fit for
+Bracketology once that's built — requires an API key) or SportsDataIO
+(paid, official support/SLA).
+
+**Every screen still carries a small "Demo data" label.** That's still
+correct until `npm run sync:espn` has actually been run somewhere with
+network access — remove the `<DemoBanner />` usages in `mobile/app/(tabs)/`
+once real data is confirmed flowing.
 
 ## Running it
 
@@ -78,7 +124,9 @@ EXPO_PUBLIC_API_URL=http://192.168.1.23:4000 npx expo start
 `server/prisma/schema.prisma` defines the full domain:
 
 - `Conference`, `Team`, `Player`, `Game`, `PlayerSeasonStat`, `TeamSeasonStat`,
-  `NewsArticle` — built and wired up now.
+  `NewsArticle` — built and wired up now. The first five carry an optional
+  unique `espnId` so the ESPN sync can upsert into the same rows the mock
+  seed populates, keyed on that column.
 - `User`, `Favorite`, `ChatMessage` — modeled now so the schema doesn't need
   to change shape later, but not yet wired to the mobile UI or a real auth
   flow.
@@ -87,9 +135,13 @@ EXPO_PUBLIC_API_URL=http://192.168.1.23:4000 npx expo start
 
 Roughly in the order it makes sense to build:
 
-1. **Real data integration** — pick a provider (see above), implement it
-   behind the existing route shapes, and add a scheduled refresh job for
-   scores/stats.
+1. **Real data integration** — ESPN sync is built (see above) but unverified
+   against a live response; the next step is running it from a machine with
+   network access, fixing whatever the mappers got wrong, and scheduling
+   `sync:scoreboard --watch` (or a cron/serverless equivalent) in
+   production. Advanced team/player season stats still need a source —
+   likely CollegeBasketballData.com given the Bracketology page needs them
+   too.
 2. **Accounts** — real auth (e.g. email/OAuth), replacing the placeholder
    `User` model with an actual sign-up/sign-in flow.
 3. **Favorites** — star teams/players/conferences from their detail
