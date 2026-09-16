@@ -4,7 +4,6 @@ import { api, type NewsArticle } from "../../src/api/client";
 import { useApi } from "../../src/api/useApi";
 import { colors } from "../../src/theme/colors";
 import { ErrorView, LoadingView } from "../../src/components/StateViews";
-import { DemoBanner } from "../../src/components/DemoBanner";
 
 function timeAgo(iso: string) {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -42,7 +41,6 @@ export default function NewsScreen() {
       keyExtractor={(a) => a.id}
       renderItem={({ item }) => <ArticleCard article={item} />}
       contentContainerStyle={styles.listContent}
-      ListHeaderComponent={<DemoBanner />}
     />
   );
 }

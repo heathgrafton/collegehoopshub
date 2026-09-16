@@ -5,7 +5,6 @@ import { useApi } from "../../src/api/useApi";
 import { colors } from "../../src/theme/colors";
 import { GameRow } from "../../src/components/GameRow";
 import { EmptyView, ErrorView, LoadingView } from "../../src/components/StateViews";
-import { DemoBanner } from "../../src/components/DemoBanner";
 
 const SECTION_TITLES: Record<GameSummary["status"], string> = {
   live: "Live",
@@ -32,7 +31,6 @@ export default function ScoresScreen() {
 
   return (
     <View style={styles.container}>
-      <DemoBanner />
       <FlatList
         data={flat}
         keyExtractor={(item, idx) => (item.type === "header" ? `h-${item.title}` : item.game.id) + idx}

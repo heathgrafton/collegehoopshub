@@ -5,7 +5,6 @@ import { api, type TeamSummary } from "../../src/api/client";
 import { useApi } from "../../src/api/useApi";
 import { colors } from "../../src/theme/colors";
 import { EmptyView, ErrorView, LoadingView } from "../../src/components/StateViews";
-import { DemoBanner } from "../../src/components/DemoBanner";
 
 export default function TeamsScreen() {
   const { state: confState } = useApi(() => api.getConferences(), []);
@@ -18,7 +17,6 @@ export default function TeamsScreen() {
 
   return (
     <View style={styles.container}>
-      <DemoBanner />
       <TextInput
         style={styles.search}
         placeholder="Search teams..."
