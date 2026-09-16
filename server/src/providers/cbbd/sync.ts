@@ -1,6 +1,6 @@
 import { prisma } from "../../prisma";
 import { cbbdClient } from "./client";
-import { mapPlayerSeasonStats, mapRecruits, mapTeamSeasonStats, mapTransfers, type NormalizedPlayerMove } from "./mappers";
+import { mapPlayerSeasonStats, mapRecruits, mapTeams, mapTeamSeasonStats, mapTransfers, type NormalizedPlayerMove } from "./mappers";
 
 // CBBD labels a season by its ending year (e.g. `season: 2026` = the 2025-26
 // season, seasonLabel "20252026") and portal/recruiting rows the same way.
@@ -38,6 +38,37 @@ function resolveTeamId(
 ): string | undefined {
   if (cbbdTeamId && lookup.byCbbdId.has(cbbdTeamId)) return lookup.byCbbdId.get(cbbdTeamId);
   return lookup.byName.get(normalizeName(teamSchool));
+}
+
+/**
+ * Fills in real city/state per team (ESPN's standings data never gives us a
+ * usable one — see the CbbdTeam comment in types.ts) so the transfer map has
+ * something accurate to geocode. Also backfills `cbbdId` for teams the other
+ * CBBD syncs haven't matched yet, since this endpoint's name matching is
+ * independent of season data existing.
+ */
+export async function syncTeamLocations() {
+  const raw = await cbbdClient.fetchTeams();
+  const locations = mapTeams(raw);
+  console.log(`[cbbd] syncing locations for ${locations.length} teams`);
+
+  const lookup = await buildTeamLookup();
+  let matched = 0;
+
+  for (const loc of locations) {
+    const teamId =
+      resolveTeamId(lookup, loc.cbbdId, loc.teamSchool) ??
+      (loc.displayName ? resolveTeamId(lookup, loc.cbbdId, loc.displayName) : undefined);
+    if (!teamId) continue;
+    matched++;
+
+    await prisma.team.update({
+      where: { id: teamId },
+      data: { city: loc.city, state: loc.state, cbbdId: loc.cbbdId },
+    });
+  }
+
+  console.log(`[cbbd] team locations sync complete (${matched} matched)`);
 }
 
 /** Fills TeamSeasonStat's advanced fields (PPG, adjusted efficiency, SOS, ...). */
@@ -223,6 +254,9 @@ export async function syncPlayerMoves(year: number = CURRENT_SEASON) {
 
   for (const m of moves) {
     const destinationTeamId = m.destinationName ? resolveTeamId(lookup, undefined, m.destinationName) : undefined;
+    // Only transfers have a college origin — a commitment's originName is a
+    // high school, which won't (and shouldn't) match a Team row.
+    const originTeamId = m.type === "transfer" && m.originName ? resolveTeamId(lookup, undefined, m.originName) : undefined;
     if (destinationTeamId) matched++;
 
     await prisma.playerMove.upsert({
@@ -240,6 +274,7 @@ export async function syncPlayerMoves(year: number = CURRENT_SEASON) {
         destinationName: m.destinationName,
         destinationConference: m.destinationConference,
         destinationTeamId: destinationTeamId ?? null,
+        originTeamId: originTeamId ?? null,
       },
       update: {
         stars: m.stars,
@@ -247,6 +282,7 @@ export async function syncPlayerMoves(year: number = CURRENT_SEASON) {
         destinationName: m.destinationName,
         destinationConference: m.destinationConference,
         destinationTeamId: destinationTeamId ?? null,
+        originTeamId: originTeamId ?? null,
       },
     });
   }
@@ -255,6 +291,7 @@ export async function syncPlayerMoves(year: number = CURRENT_SEASON) {
 }
 
 export async function syncAll(season: number = CURRENT_SEASON) {
+  await syncTeamLocations();
   await syncTeamSeasonStats(season);
   await syncPlayerSeasonStats(season);
   await syncPlayerMoves();

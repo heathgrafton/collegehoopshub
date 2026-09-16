@@ -61,6 +61,7 @@ export const api = {
     const suffix = qs.toString() ? `?${qs.toString()}` : "";
     return request<{ moves: PlayerMove[] }>(`/api/player-moves${suffix}`);
   },
+  getPlayerMovesMap: () => request<{ viewBox: { width: number; height: number }; moves: TransferMapMove[] }>("/api/player-moves/map"),
   getNews: (params?: { teamId?: string }) => {
     const qs = new URLSearchParams();
     if (params?.teamId) qs.set("teamId", params.teamId);
@@ -130,6 +131,15 @@ export type PlayerMove = {
   origin: { name: string | null; conference: string | null } | null;
   destination: { name: string | null; conference: string | null } | null;
   destinationTeam: { id: string; shortName: string; primaryColor: string; logoUrl: string | null } | null;
+};
+
+export type TransferMapMove = {
+  id: string;
+  playerName: string;
+  position: string | null;
+  stars: number | null;
+  origin: { id: string; name: string; shortName: string; x: number; y: number };
+  destination: { id: string; name: string; shortName: string; primaryColor: string; x: number; y: number };
 };
 
 export type RosterPlayer = {

@@ -28,6 +28,8 @@ model Team {
   state         String
   primaryColor  String
   logoUrl       String?
+  latitude      Float?
+  longitude     Float?
   conferenceId  String
   conference    Conference   @relation(fields: [conferenceId], references: [id])
   players       Player[]
@@ -37,6 +39,7 @@ model Team {
   newsArticles  NewsArticle[]
   favorites     Favorite[]
   incomingMoves PlayerMove[] @relation("DestinationTeam")
+  outgoingMoves PlayerMove[] @relation("OriginTeam")
 
   @@index([conferenceId])
 }
@@ -180,6 +183,8 @@ model PlayerMove {
   destinationConference String?
   destinationTeamId     String?
   destinationTeam       Team?    @relation("DestinationTeam", fields: [destinationTeamId], references: [id])
+  originTeamId          String?
+  originTeam            Team?    @relation("OriginTeam", fields: [originTeamId], references: [id])
   syncedAt              DateTime @default(now())
 
   @@index([type])

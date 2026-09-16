@@ -1,23 +1,22 @@
 /**
  * Types for CollegeBasketballData.com's REST API (api.collegebasketballdata.com).
- * CbbdTeam/CbbdConference below are unverified guesses and currently unused
- * (fetchTeams/fetchConferences are dead code — nothing calls them). Everything
- * from CbbdTeamSeasonStat onward is checked against the live OpenAPI spec and
- * live sample responses (2026-09-16) — see the per-type notes.
+ * CbbdConference below is an unverified guess and currently unused
+ * (fetchConferences is dead code — nothing calls it). Everything else in this
+ * file is checked against the live OpenAPI spec and live sample responses
+ * (2026-09-16) — see the per-type notes.
  */
 
+// Verified live 2026-09-16: currentCity/currentState are real values (e.g.
+// "Philadelphia"/"PA"), unlike ESPN's standings-derived Team.city/state,
+// where `state` is never populated and `city` is often a school abbreviation
+// or state name instead of an actual city.
 export type CbbdTeam = {
-  id?: number;
-  school?: string;
-  mascot?: string;
-  abbreviation?: string;
-  displayName?: string;
-  shortDisplayName?: string;
-  primaryColor?: string;
-  currentCity?: string;
-  currentState?: string;
-  conferenceId?: number;
-  conference?: string;
+  id: number;
+  school: string;
+  mascot: string | null;
+  displayName: string | null;
+  currentCity: string | null;
+  currentState: string | null;
 };
 
 export type CbbdConference = {

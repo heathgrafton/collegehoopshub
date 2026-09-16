@@ -5,8 +5,10 @@ import { useApi } from "../../src/api/useApi";
 import { colors } from "../../src/theme/colors";
 import { EmptyView, ErrorView, LoadingView } from "../../src/components/StateViews";
 import { TeamLogo } from "../../src/components/TeamLogo";
+import { TransferMap } from "../../src/components/TransferMap";
 
 type Filter = "all" | "transfer" | "commitment";
+type ViewMode = "list" | "map";
 
 function MoveCard({ move }: { move: PlayerMove }) {
   const isTransfer = move.type === "transfer";
@@ -35,6 +37,7 @@ function MoveCard({ move }: { move: PlayerMove }) {
 }
 
 export default function TransfersScreen() {
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [filter, setFilter] = useState<Filter>("all");
   const { state } = useApi(() => api.getPlayerMoves(filter === "all" ? undefined : { type: filter }), [filter]);
 
@@ -43,26 +46,42 @@ export default function TransfersScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.note}>Season activity from CollegeBasketballData.com — not a live, timestamped feed.</Text>
-      <View style={styles.filterRow}>
-        {(["all", "transfer", "commitment"] as Filter[]).map((f) => (
-          <Pressable key={f} style={[styles.chip, filter === f && styles.chipActive]} onPress={() => setFilter(f)}>
-            <Text style={[styles.chipText, filter === f && styles.chipTextActive]}>
-              {f === "all" ? "All" : f === "transfer" ? "Transfers" : "Commitments"}
-            </Text>
-          </Pressable>
-        ))}
+
+      <View style={styles.viewModeRow}>
+        <Pressable style={[styles.modeChip, viewMode === "list" && styles.modeChipActive]} onPress={() => setViewMode("list")}>
+          <Text style={[styles.modeChipText, viewMode === "list" && styles.modeChipTextActive]}>List</Text>
+        </Pressable>
+        <Pressable style={[styles.modeChip, viewMode === "map" && styles.modeChipActive]} onPress={() => setViewMode("map")}>
+          <Text style={[styles.modeChipText, viewMode === "map" && styles.modeChipTextActive]}>Map</Text>
+        </Pressable>
       </View>
 
-      {state.status === "loading" && <LoadingView />}
-      {state.status === "error" && <ErrorView message={state.message} />}
-      {state.status === "success" && (
-        <FlatList
-          data={data}
-          keyExtractor={(m) => m.id}
-          renderItem={({ item }) => <MoveCard move={item} />}
-          contentContainerStyle={styles.listContent}
-          ListEmptyComponent={<EmptyView message="No moves to show." />}
-        />
+      {viewMode === "map" && <TransferMap />}
+
+      {viewMode === "list" && (
+        <>
+          <View style={styles.filterRow}>
+            {(["all", "transfer", "commitment"] as Filter[]).map((f) => (
+              <Pressable key={f} style={[styles.chip, filter === f && styles.chipActive]} onPress={() => setFilter(f)}>
+                <Text style={[styles.chipText, filter === f && styles.chipTextActive]}>
+                  {f === "all" ? "All" : f === "transfer" ? "Transfers" : "Commitments"}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          {state.status === "loading" && <LoadingView />}
+          {state.status === "error" && <ErrorView message={state.message} />}
+          {state.status === "success" && (
+            <FlatList
+              data={data}
+              keyExtractor={(m) => m.id}
+              renderItem={({ item }) => <MoveCard move={item} />}
+              contentContainerStyle={styles.listContent}
+              ListEmptyComponent={<EmptyView message="No moves to show." />}
+            />
+          )}
+        </>
       )}
     </View>
   );
@@ -71,6 +90,11 @@ export default function TransfersScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   note: { color: colors.textMuted, fontSize: 11, textAlign: "center", paddingTop: 10, paddingHorizontal: 16 },
+  viewModeRow: { flexDirection: "row", gap: 8, paddingHorizontal: 16, paddingTop: 10 },
+  modeChip: { flex: 1, paddingVertical: 8, borderRadius: 10, backgroundColor: colors.surface, alignItems: "center" },
+  modeChipActive: { backgroundColor: colors.accentMuted, borderWidth: 1, borderColor: colors.accent },
+  modeChipText: { color: colors.textSecondary, fontSize: 13, fontWeight: "700" },
+  modeChipTextActive: { color: colors.accent },
   filterRow: { flexDirection: "row", gap: 8, paddingHorizontal: 16, paddingVertical: 10 },
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, backgroundColor: colors.surface },
   chipActive: { backgroundColor: colors.accent },

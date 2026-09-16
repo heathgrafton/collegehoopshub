@@ -12,6 +12,7 @@
     "sync:espn": "tsx src/sync-espn.ts",
     "sync:scoreboard": "tsx src/sync-scoreboard.ts",
     "sync:cbbd": "tsx src/sync-cbbd.ts",
+    "geocode:teams": "tsx src/geocode-teams.ts",
     "test:espn-mappers": "tsx src/providers/espn/__fixtures__/run.ts",
     "test:cbbd-mappers": "tsx src/providers/cbbd/__fixtures__/run.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -25,11 +26,13 @@
   "dependencies": {
     "@prisma/client": "^6.2.1",
     "cors": "^2.8.6",
+    "d3-geo": "^3.1.1",
     "express": "^5.2.1",
     "zod": "^4.6.5"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
+    "@types/d3-geo": "^3.1.1",
     "@types/express": "^5.0.0",
     "@types/node": "^22.10.5",
     "prisma": "^6.2.1",

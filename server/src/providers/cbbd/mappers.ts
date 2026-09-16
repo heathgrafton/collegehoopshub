@@ -5,7 +5,32 @@
  * row with a console.warn, not crash the run. See types.ts for the
  * confidence caveat on these shapes.
  */
-import type { CbbdPlayerSeasonStat, CbbdRecruit, CbbdTeamSeasonStat, CbbdTransfer } from "./types";
+import type { CbbdPlayerSeasonStat, CbbdRecruit, CbbdTeam, CbbdTeamSeasonStat, CbbdTransfer } from "./types";
+
+export type NormalizedTeamLocation = {
+  cbbdId: string;
+  teamSchool: string;
+  displayName: string | null;
+  city: string;
+  state: string;
+};
+
+export function mapTeams(raw: CbbdTeam[]): NormalizedTeamLocation[] {
+  const out: NormalizedTeamLocation[] = [];
+  for (const t of raw) {
+    if (!t.school || !t.currentCity || !t.currentState) {
+      continue;
+    }
+    out.push({
+      cbbdId: String(t.id),
+      teamSchool: t.school,
+      displayName: t.displayName,
+      city: t.currentCity,
+      state: t.currentState,
+    });
+  }
+  return out;
+}
 
 export type NormalizedTeamSeasonStat = {
   teamSchool: string;
