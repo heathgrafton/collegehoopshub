@@ -45,7 +45,22 @@ export const api = {
   },
   getConferences: () => request<{ conferences: Conference[] }>("/api/teams/conferences"),
   getTeam: (id: string) => request<{ team: TeamDetail }>(`/api/teams/${id}`),
+  getPlayers: (params?: { team?: string; conference?: string; search?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.team) qs.set("team", params.team);
+    if (params?.conference) qs.set("conference", params.conference);
+    if (params?.search) qs.set("search", params.search);
+    const suffix = qs.toString() ? `?${qs.toString()}` : "";
+    return request<{ players: PlayerListItem[] }>(`/api/players${suffix}`);
+  },
   getPlayer: (id: string) => request<{ player: PlayerDetail }>(`/api/players/${id}`),
+  getPlayerMoves: (params?: { type?: "transfer" | "commitment"; team?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.type) qs.set("type", params.type);
+    if (params?.team) qs.set("team", params.team);
+    const suffix = qs.toString() ? `?${qs.toString()}` : "";
+    return request<{ moves: PlayerMove[] }>(`/api/player-moves${suffix}`);
+  },
   getNews: (params?: { teamId?: string }) => {
     const qs = new URLSearchParams();
     if (params?.teamId) qs.set("teamId", params.teamId);
@@ -87,6 +102,32 @@ export type TeamSummary = {
   primaryColor: string;
   conference: Conference;
   record: TeamRecord | null;
+};
+
+export type PlayerListItem = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  jerseyNumber: string;
+  position: string;
+  classYear: string;
+  team: TeamRef & { conference: Conference };
+  pointsPerGame: number | null;
+  reboundsPerGame: number | null;
+  assistsPerGame: number | null;
+};
+
+export type PlayerMove = {
+  id: string;
+  type: "transfer" | "commitment";
+  year: number;
+  playerName: string;
+  position: string | null;
+  stars: number | null;
+  rating: number | null;
+  origin: { name: string | null; conference: string | null } | null;
+  destination: { name: string | null; conference: string | null } | null;
+  destinationTeam: { id: string; shortName: string; primaryColor: string } | null;
 };
 
 export type RosterPlayer = {

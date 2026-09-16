@@ -1,4 +1,11 @@
-import type { CbbdConference, CbbdPlayerSeasonStat, CbbdTeam, CbbdTeamSeasonStat } from "./types";
+import type {
+  CbbdConference,
+  CbbdPlayerSeasonStat,
+  CbbdRecruit,
+  CbbdTeam,
+  CbbdTeamSeasonStat,
+  CbbdTransfer,
+} from "./types";
 
 const BASE_URL = "https://api.collegebasketballdata.com";
 
@@ -52,6 +59,14 @@ export const cbbdClient = {
 
   fetchPlayerSeasonStats(season: number): Promise<CbbdPlayerSeasonStat[]> {
     return getJson("/stats/player/season", { season: String(season) });
+  },
+
+  fetchPortalTransfers(year: number): Promise<CbbdTransfer[]> {
+    return getJson("/recruiting/portal", { year: String(year) });
+  },
+
+  fetchRecruits(year: number): Promise<CbbdRecruit[]> {
+    return getJson("/recruiting/players", { year: String(year) });
   },
 };
 

@@ -35,6 +35,7 @@ model Team {
   seasonStats   TeamSeasonStat[]
   newsArticles  NewsArticle[]
   favorites     Favorite[]
+  incomingMoves PlayerMove[] @relation("DestinationTeam")
 
   @@index([conferenceId])
 }
@@ -136,6 +137,31 @@ model NewsArticle {
 
   @@index([teamId])
   @@index([publishedAt])
+}
+
+// Transfer-portal moves and recruiting commitments from CollegeBasketballData.com.
+// Their API has no per-move timestamp, only a season `year`, so `syncedAt` (when
+// our own sync first saw the row) is the closest thing to a "recency" signal.
+model PlayerMove {
+  id                    String   @id @default(cuid())
+  cbbdId                String   @unique // "transfer-<id>" or "commitment-<id>"
+  type                  String   // "transfer" | "commitment"
+  year                  Int
+  playerName            String
+  position              String?
+  stars                 Int?
+  rating                Float?
+  originName            String?
+  originConference      String?
+  destinationName       String?
+  destinationConference String?
+  destinationTeamId     String?
+  destinationTeam       Team?    @relation("DestinationTeam", fields: [destinationTeamId], references: [id])
+  syncedAt              DateTime @default(now())
+
+  @@index([type])
+  @@index([year])
+  @@index([syncedAt])
 }
 
 // --- Roadmap models (schema in place now; not yet wired to the mobile UI) ---

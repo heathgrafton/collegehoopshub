@@ -4,6 +4,7 @@ import { scoreboardRouter } from "./routes/scoreboard";
 import { gamesRouter } from "./routes/games";
 import { teamsRouter } from "./routes/teams";
 import { playersRouter } from "./routes/players";
+import { playerMovesRouter } from "./routes/player-moves";
 import { newsRouter } from "./routes/news";
 
 const app = express();
@@ -18,6 +19,7 @@ app.use("/api/scoreboard", scoreboardRouter);
 app.use("/api/games", gamesRouter);
 app.use("/api/teams", teamsRouter);
 app.use("/api/players", playersRouter);
+app.use("/api/player-moves", playerMovesRouter);
 app.use("/api/news", newsRouter);
 
 const port = Number(process.env.PORT) || 4000;

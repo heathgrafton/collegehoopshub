@@ -2,6 +2,7 @@ import { FlatList, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { useMemo } from "react";
 import { api, type GameSummary } from "../../src/api/client";
 import { useApi } from "../../src/api/useApi";
+import { useFavorites } from "../../src/favorites/FavoritesContext";
 import { colors } from "../../src/theme/colors";
 import { GameRow } from "../../src/components/GameRow";
 import { EmptyView, ErrorView, LoadingView } from "../../src/components/StateViews";
@@ -14,15 +15,28 @@ const SECTION_TITLES: Record<GameSummary["status"], string> = {
 
 export default function ScoresScreen() {
   const { state, reload } = useApi(() => api.getScoreboard(), [], 15000);
+  const { favoriteTeamIds } = useFavorites();
 
   const sections = useMemo(() => {
     if (state.status !== "success") return [];
     const groups: Record<GameSummary["status"], GameSummary[]> = { live: [], scheduled: [], final: [] };
     for (const game of state.data.games) groups[game.status].push(game);
-    return (["live", "scheduled", "final"] as const)
-      .filter((key) => groups[key].length > 0)
-      .map((key) => ({ title: SECTION_TITLES[key], data: groups[key] }));
-  }, [state]);
+
+    const result: { title: string; data: GameSummary[] }[] = [];
+
+    if (favoriteTeamIds.length > 0) {
+      const favoriteGames = state.data.games.filter(
+        (g) => favoriteTeamIds.includes(g.homeTeam.id) || favoriteTeamIds.includes(g.awayTeam.id)
+      );
+      if (favoriteGames.length > 0) result.push({ title: "Your Teams", data: favoriteGames });
+    }
+
+    for (const key of ["live", "scheduled", "final"] as const) {
+      if (groups[key].length > 0) result.push({ title: SECTION_TITLES[key], data: groups[key] });
+    }
+
+    return result;
+  }, [state, favoriteTeamIds]);
 
   if (state.status === "loading") return <LoadingView />;
   if (state.status === "error") return <ErrorView message={state.message} />;

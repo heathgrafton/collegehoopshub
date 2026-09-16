@@ -239,7 +239,7 @@ export function mapNews(raw: EspnNewsResponse): NormalizedArticle[] {
       imageUrl: a.images?.[0]?.url ?? null,
       teamEspnIds: (a.categories ?? [])
         .map((c) => c.team?.id)
-        .filter((id): id is string | number => Boolean(id))
+        .filter(Boolean)
         .map((id) => String(id)),
     });
   }

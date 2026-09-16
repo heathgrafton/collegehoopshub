@@ -4,7 +4,7 @@ import { colors } from "../../src/theme/colors";
 
 function TabIcon({ symbol, focused }: { symbol: string; focused: boolean }) {
   return (
-    <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.5 }}>{symbol}</Text>
+    <Text style={{ fontSize: 17, opacity: focused ? 1 : 0.5 }}>{symbol}</Text>
   );
 }
 
@@ -18,6 +18,7 @@ export default function TabsLayout() {
         tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border },
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textMuted,
+        tabBarLabelStyle: { fontSize: 10 },
       }}
     >
       <Tabs.Screen
@@ -35,6 +36,20 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="players"
+        options={{
+          title: "Players",
+          tabBarIcon: ({ focused }) => <TabIcon symbol="👤" focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
+        name="transfers"
+        options={{
+          title: "Portal",
+          tabBarIcon: ({ focused }) => <TabIcon symbol="🔁" focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
         name="news"
         options={{
           title: "News",
@@ -44,14 +59,14 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="bracketology"
         options={{
-          title: "Bracketology",
+          title: "Bracket",
           tabBarIcon: ({ focused }) => <TabIcon symbol="📋" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="favorites"
         options={{
-          title: "Favorites",
+          title: "Favs",
           tabBarIcon: ({ focused }) => <TabIcon symbol="⭐" focused={focused} />,
         }}
       />

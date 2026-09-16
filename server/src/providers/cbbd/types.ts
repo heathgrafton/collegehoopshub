@@ -55,6 +55,34 @@ export type CbbdTeamSeasonStat = {
   sos?: number;
 };
 
+// Verified against CBBD's live OpenAPI spec (api.collegebasketballdata.com/api-docs.json)
+// on 2026-09-16, unlike the other shapes in this file — these field names are confirmed.
+export type CbbdTeamRef = { id: number | null; name: string | null; conference: string | null };
+
+export type CbbdTransfer = {
+  id: number;
+  year: number;
+  firstName: string;
+  lastName: string;
+  position: string;
+  origin: CbbdTeamRef | null;
+  destination: CbbdTeamRef | null;
+  stars: number | null;
+  rating: number | null;
+};
+
+export type CbbdRecruit = {
+  id: number;
+  year: number;
+  name: string;
+  position: string | null;
+  school: string | null;
+  committedTo: CbbdTeamRef | null;
+  stars: number;
+  rating: number;
+  ranking: number | null;
+};
+
 export type CbbdPlayerSeasonStat = {
   season?: number;
   athleteId?: number;

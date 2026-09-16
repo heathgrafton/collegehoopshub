@@ -1,8 +1,13 @@
 import { prisma } from "../../prisma";
 import { cbbdClient } from "./client";
-import { mapPlayerSeasonStats, mapTeamSeasonStats } from "./mappers";
+import { mapPlayerSeasonStats, mapRecruits, mapTeamSeasonStats, mapTransfers, type NormalizedPlayerMove } from "./mappers";
 
 const CURRENT_SEASON = new Date().getMonth() >= 6 ? new Date().getFullYear() + 1 : new Date().getFullYear();
+
+// The portal/recruiting endpoints label rows by calendar year, not the
+// +1-shifted "season" convention above (verified live: 2026 already has data
+// for both, 2027 doesn't exist yet).
+const CURRENT_RECRUITING_YEAR = new Date().getFullYear();
 
 function normalizeName(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -165,7 +170,53 @@ export async function syncPlayerSeasonStats(season: number = CURRENT_SEASON) {
   console.log(`[cbbd] player season stats sync complete (${matched} matched)`);
 }
 
+/** Upserts transfer-portal moves and recruiting commitments, matching a destination team when one exists. */
+export async function syncPlayerMoves(year: number = CURRENT_RECRUITING_YEAR) {
+  const [rawTransfers, rawRecruits] = await Promise.all([
+    cbbdClient.fetchPortalTransfers(year),
+    cbbdClient.fetchRecruits(year),
+  ]);
+  const moves: NormalizedPlayerMove[] = [...mapTransfers(rawTransfers), ...mapRecruits(rawRecruits)];
+  console.log(`[cbbd] syncing ${moves.length} player moves (${rawTransfers.length} transfers, ${rawRecruits.length} commitments)`);
+
+  const lookup = await buildTeamLookup();
+  let matched = 0;
+
+  for (const m of moves) {
+    const destinationTeamId = m.destinationName ? resolveTeamId(lookup, undefined, m.destinationName) : undefined;
+    if (destinationTeamId) matched++;
+
+    await prisma.playerMove.upsert({
+      where: { cbbdId: m.cbbdId },
+      create: {
+        cbbdId: m.cbbdId,
+        type: m.type,
+        year: m.year,
+        playerName: m.playerName,
+        position: m.position,
+        stars: m.stars,
+        rating: m.rating,
+        originName: m.originName,
+        originConference: m.originConference,
+        destinationName: m.destinationName,
+        destinationConference: m.destinationConference,
+        destinationTeamId: destinationTeamId ?? null,
+      },
+      update: {
+        stars: m.stars,
+        rating: m.rating,
+        destinationName: m.destinationName,
+        destinationConference: m.destinationConference,
+        destinationTeamId: destinationTeamId ?? null,
+      },
+    });
+  }
+
+  console.log(`[cbbd] player moves sync complete (${matched} matched to a team)`);
+}
+
 export async function syncAll(season: number = CURRENT_SEASON) {
   await syncTeamSeasonStats(season);
   await syncPlayerSeasonStats(season);
+  await syncPlayerMoves();
 }

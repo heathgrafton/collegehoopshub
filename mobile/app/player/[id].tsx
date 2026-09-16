@@ -2,6 +2,7 @@ import { Link, Stack, useLocalSearchParams } from "expo-router";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { api } from "../../src/api/client";
 import { useApi } from "../../src/api/useApi";
+import { useFavorites } from "../../src/favorites/FavoritesContext";
 import { colors } from "../../src/theme/colors";
 import { ErrorView, LoadingView } from "../../src/components/StateViews";
 
@@ -21,12 +22,14 @@ function formatHeight(inches: number) {
 export default function PlayerDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { state } = useApi(() => api.getPlayer(id), [id]);
+  const { isFavoritePlayer, toggleFavoritePlayer } = useFavorites();
 
   if (state.status === "loading") return <LoadingView />;
   if (state.status === "error") return <ErrorView message={state.message} />;
 
   const { player } = state.data;
   const s = player.seasonStats;
+  const favorite = isFavoritePlayer(player.id);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -46,6 +49,9 @@ export default function PlayerDetailScreen() {
           </Text>
           <Text style={styles.sub}>{player.hometown}</Text>
         </View>
+        <Pressable hitSlop={10} onPress={() => toggleFavoritePlayer(player.id)}>
+          <Text style={[styles.starText, favorite && styles.starTextActive]}>{favorite ? "★" : "☆"}</Text>
+        </Pressable>
       </View>
 
       {s && (
@@ -89,6 +95,8 @@ const styles = StyleSheet.create({
   name: { color: colors.textPrimary, fontSize: 20, fontWeight: "700" },
   teamLink: { color: colors.accent, fontSize: 13, marginTop: 2, fontWeight: "600" },
   sub: { color: colors.textSecondary, fontSize: 13, marginTop: 2 },
+  starText: { color: colors.textMuted, fontSize: 26 },
+  starTextActive: { color: colors.accent },
   statsRow: { flexDirection: "row", backgroundColor: colors.surface, borderRadius: 12, padding: 12 },
   statBox: { flex: 1, alignItems: "center" },
   statValue: { color: colors.textPrimary, fontSize: 17, fontWeight: "700" },

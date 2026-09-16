@@ -3,6 +3,7 @@ import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } fr
 import { Link } from "expo-router";
 import { api, type TeamSummary } from "../../src/api/client";
 import { useApi } from "../../src/api/useApi";
+import { useFavorites } from "../../src/favorites/FavoritesContext";
 import { colors } from "../../src/theme/colors";
 import { EmptyView, ErrorView, LoadingView } from "../../src/components/StateViews";
 
@@ -12,8 +13,17 @@ export default function TeamsScreen() {
   const [search, setSearch] = useState("");
 
   const { state } = useApi(() => api.getTeams({ conference: conference ?? undefined, search: search || undefined }), [conference, search]);
+  const { favoriteTeamIds } = useFavorites();
 
   const conferences = confState.status === "success" ? confState.data.conferences : [];
+
+  const { favorites, rest } = useMemo(() => {
+    if (state.status !== "success") return { favorites: [] as TeamSummary[], rest: [] as TeamSummary[] };
+    return {
+      favorites: state.data.teams.filter((t) => favoriteTeamIds.includes(t.id)),
+      rest: state.data.teams.filter((t) => !favoriteTeamIds.includes(t.id)),
+    };
+  }, [state, favoriteTeamIds]);
 
   return (
     <View style={styles.container}>
@@ -35,9 +45,15 @@ export default function TeamsScreen() {
       {state.status === "error" && <ErrorView message={state.message} />}
       {state.status === "success" && (
         <FlatList
-          data={state.data.teams}
+          data={[...favorites, ...rest]}
           keyExtractor={(t) => t.id}
-          renderItem={({ item }) => <TeamRow team={item} />}
+          renderItem={({ item, index }) => (
+            <>
+              {index === 0 && favorites.length > 0 && <Text style={styles.sectionTitle}>Your Favorites</Text>}
+              {index === favorites.length && favorites.length > 0 && <Text style={styles.sectionTitle}>All Teams</Text>}
+              <TeamRow team={item} />
+            </>
+          )}
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={<EmptyView message="No teams match your search." />}
         />
@@ -55,6 +71,9 @@ function FilterChip({ label, active, onPress }: { label: string; active: boolean
 }
 
 function TeamRow({ team }: { team: TeamSummary }) {
+  const { isFavoriteTeam, toggleFavoriteTeam } = useFavorites();
+  const favorite = isFavoriteTeam(team.id);
+
   return (
     <Link href={`/team/${team.id}`} asChild>
       <Pressable style={styles.teamCard}>
@@ -68,6 +87,9 @@ function TeamRow({ team }: { team: TeamSummary }) {
             {team.record.wins}-{team.record.losses}
           </Text>
         )}
+        <Pressable hitSlop={10} onPress={() => toggleFavoriteTeam(team.id)} style={styles.star}>
+          <Text style={[styles.starText, favorite && styles.starTextActive]}>{favorite ? "★" : "☆"}</Text>
+        </Pressable>
       </Pressable>
     </Link>
   );
@@ -97,14 +119,14 @@ const styles = StyleSheet.create({
   chipActive: { backgroundColor: colors.accent },
   chipText: { color: colors.textSecondary, fontSize: 13, fontWeight: "600" },
   chipTextActive: { color: "#fff" },
-  listContent: { paddingBottom: 24 },
+  listContent: { paddingBottom: 24, paddingHorizontal: 16 },
+  sectionTitle: { color: colors.textPrimary, fontSize: 15, fontWeight: "700", marginTop: 12, marginBottom: 6 },
   teamCard: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 14,
-    marginHorizontal: 16,
     marginBottom: 8,
     gap: 12,
   },
@@ -113,4 +135,7 @@ const styles = StyleSheet.create({
   teamName: { color: colors.textPrimary, fontSize: 15, fontWeight: "600" },
   teamSub: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
   record: { color: colors.textSecondary, fontSize: 13, fontWeight: "600" },
+  star: { paddingLeft: 4 },
+  starText: { color: colors.textMuted, fontSize: 18 },
+  starTextActive: { color: colors.accent },
 });

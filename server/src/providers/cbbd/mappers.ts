@@ -5,7 +5,7 @@
  * row with a console.warn, not crash the run. See types.ts for the
  * confidence caveat on these shapes.
  */
-import type { CbbdPlayerSeasonStat, CbbdStatValue, CbbdTeamSeasonStat } from "./types";
+import type { CbbdPlayerSeasonStat, CbbdRecruit, CbbdStatValue, CbbdTeamSeasonStat, CbbdTransfer } from "./types";
 
 export type NormalizedTeamSeasonStat = {
   teamSchool: string;
@@ -37,6 +37,68 @@ export type NormalizedPlayerSeasonStat = {
   threePointPct: number | null;
   freeThrowPct: number | null;
 };
+
+export type NormalizedPlayerMove = {
+  cbbdId: string;
+  type: "transfer" | "commitment";
+  year: number;
+  playerName: string;
+  position: string | null;
+  stars: number | null;
+  rating: number | null;
+  originName: string | null;
+  originConference: string | null;
+  destinationName: string | null;
+  destinationConference: string | null;
+};
+
+export function mapTransfers(raw: CbbdTransfer[]): NormalizedPlayerMove[] {
+  const out: NormalizedPlayerMove[] = [];
+  for (const t of raw) {
+    if (t.id === undefined || !t.lastName) {
+      console.warn("[cbbd] skipping transfer with missing id/name", t);
+      continue;
+    }
+    out.push({
+      cbbdId: `transfer-${t.id}`,
+      type: "transfer",
+      year: t.year,
+      playerName: `${t.firstName} ${t.lastName}`.trim(),
+      position: t.position ?? null,
+      stars: t.stars,
+      rating: t.rating,
+      originName: t.origin?.name ?? null,
+      originConference: t.origin?.conference ?? null,
+      destinationName: t.destination?.name ?? null,
+      destinationConference: t.destination?.conference ?? null,
+    });
+  }
+  return out;
+}
+
+export function mapRecruits(raw: CbbdRecruit[]): NormalizedPlayerMove[] {
+  const out: NormalizedPlayerMove[] = [];
+  for (const r of raw) {
+    if (r.id === undefined || !r.name) {
+      console.warn("[cbbd] skipping recruit with missing id/name", r);
+      continue;
+    }
+    out.push({
+      cbbdId: `commitment-${r.id}`,
+      type: "commitment",
+      year: r.year,
+      playerName: r.name,
+      position: r.position,
+      stars: r.stars,
+      rating: r.rating,
+      originName: r.school,
+      originConference: null,
+      destinationName: r.committedTo?.name ?? null,
+      destinationConference: r.committedTo?.conference ?? null,
+    });
+  }
+  return out;
+}
 
 /** Reads a stat that might be a plain number or a `{ perGame, total }` object. */
 function readPerGame(value: CbbdStatValue): number | null {

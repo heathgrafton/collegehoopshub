@@ -2,6 +2,7 @@ import { Link, Stack, useLocalSearchParams } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { api, type RosterPlayer } from "../../src/api/client";
 import { useApi } from "../../src/api/useApi";
+import { useFavorites } from "../../src/favorites/FavoritesContext";
 import { colors } from "../../src/theme/colors";
 import { ErrorView, LoadingView } from "../../src/components/StateViews";
 
@@ -40,11 +41,13 @@ function PlayerRow({ player }: { player: RosterPlayer }) {
 export default function TeamDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { state } = useApi(() => api.getTeam(id), [id]);
+  const { isFavoriteTeam, toggleFavoriteTeam } = useFavorites();
 
   if (state.status === "loading") return <LoadingView />;
   if (state.status === "error") return <ErrorView message={state.message} />;
 
   const { team } = state.data;
+  const favorite = isFavoriteTeam(team.id);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -58,6 +61,9 @@ export default function TeamDetailScreen() {
             {team.city}, {team.state} · {team.conference.name}
           </Text>
         </View>
+        <Pressable hitSlop={10} onPress={() => toggleFavoriteTeam(team.id)}>
+          <Text style={[styles.starText, favorite && styles.starTextActive]}>{favorite ? "★" : "☆"}</Text>
+        </Pressable>
       </View>
 
       {team.record && (
@@ -121,6 +127,8 @@ const styles = StyleSheet.create({
   colorDot: { width: 20, height: 20, borderRadius: 10 },
   teamName: { color: colors.textPrimary, fontSize: 20, fontWeight: "700" },
   teamSub: { color: colors.textSecondary, fontSize: 13, marginTop: 2 },
+  starText: { color: colors.textMuted, fontSize: 26 },
+  starTextActive: { color: colors.accent },
   statsRow: { flexDirection: "row", backgroundColor: colors.surface, borderRadius: 12, padding: 12 },
   statBox: { flex: 1, alignItems: "center" },
   statValue: { color: colors.textPrimary, fontSize: 17, fontWeight: "700" },
