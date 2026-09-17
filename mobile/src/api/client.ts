@@ -61,7 +61,8 @@ export const api = {
     const suffix = qs.toString() ? `?${qs.toString()}` : "";
     return request<{ moves: PlayerMove[] }>(`/api/player-moves${suffix}`);
   },
-  getPlayerMovesMap: () => request<{ viewBox: { width: number; height: number }; moves: TransferMapMove[] }>("/api/player-moves/map"),
+  getPlayerMovesMap: () =>
+    request<{ viewBox: { width: number; height: number }; schools: MapSchool[]; lines: MapLine[] }>("/api/player-moves/map"),
   getNews: (params?: { teamId?: string }) => {
     const qs = new URLSearchParams();
     if (params?.teamId) qs.set("teamId", params.teamId);
@@ -133,14 +134,19 @@ export type PlayerMove = {
   destinationTeam: { id: string; shortName: string; primaryColor: string; logoUrl: string | null } | null;
 };
 
-export type TransferMapMove = {
+export type MapSchool = {
   id: string;
-  playerName: string;
-  position: string | null;
-  stars: number | null;
-  origin: { id: string; name: string; shortName: string; x: number; y: number };
-  destination: { id: string; name: string; shortName: string; primaryColor: string; x: number; y: number };
+  name: string;
+  shortName: string;
+  primaryColor: string;
+  logoUrl: string | null;
+  x: number;
+  y: number;
+  arrivals: { id: string; playerName: string; position: string | null; stars: number | null; originName: string | null }[];
+  departures: { id: string; playerName: string; position: string | null; stars: number | null; destinationName: string | null }[];
 };
+
+export type MapLine = { id: string; x1: number; y1: number; x2: number; y2: number };
 
 export type RosterPlayer = {
   id: string;
