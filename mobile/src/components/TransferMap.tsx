@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import Svg, { Circle, Line, Path } from "react-native-svg";
+import Svg, { Circle, ClipPath, Defs, Image as SvgImage, Line, Path } from "react-native-svg";
 import { api, type MapSchool } from "../api/client";
 import { useApi } from "../api/useApi";
 import { colors } from "../theme/colors";
@@ -10,6 +10,38 @@ import { MAP_VIEWBOX, US_OUTLINE_PATH } from "./UsMapOutline";
 
 const NATIVE_WIDTH = 975;
 const NATIVE_HEIGHT = 610;
+const MAX_ZOOM = 5;
+
+function radiusFor(school: MapSchool) {
+  return Math.min(4 + (school.arrivals.length + school.departures.length) * 0.2, 12);
+}
+
+function SchoolIcon({ school }: { school: MapSchool }) {
+  const r = radiusFor(school);
+  if (!school.logoUrl) {
+    return <Circle cx={school.x} cy={school.y} r={r} fill={school.primaryColor} stroke={colors.background} strokeWidth={0.5} />;
+  }
+  const clipId = `clip-${school.id}`;
+  return (
+    <>
+      <Defs>
+        <ClipPath id={clipId}>
+          <Circle cx={school.x} cy={school.y} r={r} />
+        </ClipPath>
+      </Defs>
+      <Circle cx={school.x} cy={school.y} r={r + 0.5} fill={colors.surface} stroke={colors.background} strokeWidth={0.5} />
+      <SvgImage
+        href={school.logoUrl}
+        x={school.x - r}
+        y={school.y - r}
+        width={r * 2}
+        height={r * 2}
+        preserveAspectRatio="xMidYMid slice"
+        clipPath={`url(#${clipId})`}
+      />
+    </>
+  );
+}
 
 export function TransferMap() {
   const { state } = useApi(() => api.getPlayerMovesMap(), []);
@@ -29,49 +61,52 @@ export function TransferMap() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.caption}>{schools.length} schools with portal activity — tap a dot for details</Text>
-      <View style={[styles.mapCard, { width: screenWidth, height: renderHeight }]}>
-        <Svg width={screenWidth} height={renderHeight} viewBox={MAP_VIEWBOX}>
-          <Path d={US_OUTLINE_PATH} fill={colors.surfaceAlt} stroke={colors.border} strokeWidth={0.5} />
-          {lines.map((l) => (
-            <Line key={l.id} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke={colors.accent} strokeWidth={0.6} strokeOpacity={0.3} />
-          ))}
-          {schools.map((s) => (
-            <Circle
-              key={s.id}
-              cx={s.x}
-              cy={s.y}
-              r={Math.min(2 + (s.arrivals.length + s.departures.length) * 0.15, 6)}
-              fill={s.primaryColor}
-              stroke={colors.background}
-              strokeWidth={0.5}
-            />
-          ))}
-        </Svg>
-        {/* Plain SVG shapes don't take touch input reliably on web, so taps are
-            handled by real Pressable views positioned on top of each dot. */}
-        {schools.map((s) => {
-          const r = Math.min(2 + (s.arrivals.length + s.departures.length) * 0.15, 6) * scale;
-          const hit = Math.max(r * 2, 18);
-          return (
-            <Pressable
-              key={s.id}
-              onPress={() => setSelected(s)}
-              style={{
-                position: "absolute",
-                left: s.x * scale - hit / 2,
-                top: s.y * scale - hit / 2,
-                width: hit,
-                height: hit,
-              }}
-            />
-          );
-        })}
-      </View>
+      <Text style={styles.caption}>{schools.length} schools with portal activity — pinch to zoom, tap a school for details</Text>
+      <ScrollView
+        style={[styles.mapCard, { width: screenWidth, height: renderHeight }]}
+        contentContainerStyle={{ width: screenWidth, height: renderHeight }}
+        minimumZoomScale={1}
+        maximumZoomScale={MAX_ZOOM}
+        pinchGestureEnabled
+        showsHorizontalScrollIndicator={false}
+        showsVerticalScrollIndicator={false}
+        bouncesZoom
+      >
+        <View style={{ width: screenWidth, height: renderHeight }}>
+          <Svg width={screenWidth} height={renderHeight} viewBox={MAP_VIEWBOX}>
+            <Path d={US_OUTLINE_PATH} fill={colors.surfaceAlt} stroke={colors.border} strokeWidth={0.5} />
+            {lines.map((l) => (
+              <Line key={l.id} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke={colors.accent} strokeWidth={0.6} strokeOpacity={0.3} />
+            ))}
+            {schools.map((s) => (
+              <SchoolIcon key={s.id} school={s} />
+            ))}
+          </Svg>
+          {/* Plain SVG shapes don't take touch input reliably on web, so taps are
+              handled by real Pressable views positioned on top of each icon. */}
+          {schools.map((s) => {
+            const r = radiusFor(s) * scale;
+            const hit = Math.max(r * 2, 20);
+            return (
+              <Pressable
+                key={s.id}
+                onPress={() => setSelected(s)}
+                style={{
+                  position: "absolute",
+                  left: s.x * scale - hit / 2,
+                  top: s.y * scale - hit / 2,
+                  width: hit,
+                  height: hit,
+                }}
+              />
+            );
+          })}
+        </View>
+      </ScrollView>
       <View style={styles.legendRow}>
         <View style={styles.legendItem}>
           <View style={[styles.legendDot, { backgroundColor: colors.accent }]} />
-          <Text style={styles.legendText}>School (bigger = more portal activity)</Text>
+          <Text style={styles.legendText}>Bigger icon = more portal activity</Text>
         </View>
       </View>
 
@@ -126,7 +161,7 @@ function SchoolDetail({ school, onClose }: { school: MapSchool; onClose: () => v
 const styles = StyleSheet.create({
   container: { flex: 1, alignItems: "center", padding: 16, gap: 12 },
   caption: { color: colors.textMuted, fontSize: 12, textAlign: "center" },
-  mapCard: { backgroundColor: colors.surface, borderRadius: 12, overflow: "hidden" },
+  mapCard: { backgroundColor: colors.surface, borderRadius: 12 },
   legendRow: { flexDirection: "row", gap: 16 },
   legendItem: { flexDirection: "row", alignItems: "center", gap: 6 },
   legendDot: { width: 8, height: 8, borderRadius: 4 },
