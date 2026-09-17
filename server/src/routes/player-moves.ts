@@ -84,10 +84,15 @@ playerMovesRouter.get("/map", async (_req, res) => {
     }
   }
 
+  // Lines are purely decorative (each school's own arrivals/departures list
+  // already has the full detail) — capping keeps the SVG from drawing 700+
+  // overlapping strokes, which was a real source of lag on the phone.
+  const cappedLines = lines.slice(0, 300);
+
   res.json({
     viewBox: { width: 975, height: 610 },
     schools: Array.from(schools.values()),
-    lines,
+    lines: cappedLines,
   });
 });
 

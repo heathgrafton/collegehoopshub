@@ -1,6 +1,14 @@
 import { useMemo, useRef, useState } from "react";
-import { Dimensions, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { PinchGestureHandler, State, type PinchGestureHandlerStateChangeEvent } from "react-native-gesture-handler";
+import { Animated, Dimensions, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  PinchGestureHandler,
+  PanGestureHandler,
+  State,
+  type PinchGestureHandlerStateChangeEvent,
+  type PanGestureHandlerStateChangeEvent,
+  type PinchGestureHandlerGestureEvent,
+  type PanGestureHandlerGestureEvent,
+} from "react-native-gesture-handler";
 import Svg, { Circle, Line, Path } from "react-native-svg";
 import { api, type MapSchool } from "../api/client";
 import { useApi } from "../api/useApi";
@@ -11,8 +19,7 @@ import { MAP_VIEWBOX, US_OUTLINE_PATH } from "./UsMapOutline";
 
 const NATIVE_WIDTH = 975;
 const NATIVE_HEIGHT = 610;
-const MIN_SCALE = 1;
-const MAX_SCALE = 6;
+const MAX_SCALE = 4;
 
 function radiusFor(school: MapSchool) {
   return Math.min(4 + (school.arrivals.length + school.departures.length) * 0.2, 12);
@@ -21,26 +28,72 @@ function radiusFor(school: MapSchool) {
 export function TransferMap() {
   const { state } = useApi(() => api.getPlayerMovesMap(), []);
   const [selected, setSelected] = useState<MapSchool | null>(null);
-  const [scale, setScale] = useState(1);
-  const pinchAccumulator = useRef(1);
 
-  const baseWidth = Dimensions.get("window").width - 32;
-  const baseHeight = (baseWidth / NATIVE_WIDTH) * NATIVE_HEIGHT;
-  const renderWidth = baseWidth * scale;
-  const renderHeight = baseHeight * scale;
-  const pxScale = renderWidth / NATIVE_WIDTH;
+  const containerWidth = Dimensions.get("window").width - 32;
+  const containerHeight = (containerWidth / NATIVE_WIDTH) * NATIVE_HEIGHT;
+  const pxScale = containerWidth / NATIVE_WIDTH;
+
+  const pinchRef = useRef(null);
+  const panRef = useRef(null);
+  const lastScale = useRef(1);
+  const lastTranslate = useRef({ x: 0, y: 0 });
+
+  // Rendered once at mount; zoom/pan afterward is a pure transform (GPU-driven,
+  // no re-layout of the ~250 school markers) instead of resizing/repositioning
+  // everything on every pinch step, which is what made the previous version laggy.
+  const baseScale = useRef(new Animated.Value(1)).current;
+  const pinchScale = useRef(new Animated.Value(1)).current;
+  const baseTranslateX = useRef(new Animated.Value(0)).current;
+  const baseTranslateY = useRef(new Animated.Value(0)).current;
+  const panTranslateX = useRef(new Animated.Value(0)).current;
+  const panTranslateY = useRef(new Animated.Value(0)).current;
+
+  const scale = Animated.multiply(baseScale, pinchScale);
+  const translateX = Animated.add(baseTranslateX, panTranslateX);
+  const translateY = Animated.add(baseTranslateY, panTranslateY);
+
+  const onPinchGestureEvent = Animated.event([{ nativeEvent: { scale: pinchScale } }], { useNativeDriver: true });
+  const onPanGestureEvent = Animated.event(
+    [{ nativeEvent: { translationX: panTranslateX, translationY: panTranslateY } }],
+    { useNativeDriver: true }
+  );
+
+  function onPinchStateChange(e: PinchGestureHandlerStateChangeEvent) {
+    if (e.nativeEvent.oldState === State.ACTIVE) {
+      lastScale.current = Math.min(MAX_SCALE, Math.max(1, lastScale.current * e.nativeEvent.scale));
+      baseScale.setValue(lastScale.current);
+      pinchScale.setValue(1);
+    }
+  }
+
+  function onPanStateChange(e: PanGestureHandlerStateChangeEvent) {
+    if (e.nativeEvent.oldState === State.ACTIVE) {
+      lastTranslate.current = {
+        x: lastTranslate.current.x + e.nativeEvent.translationX,
+        y: lastTranslate.current.y + e.nativeEvent.translationY,
+      };
+      baseTranslateX.setValue(lastTranslate.current.x);
+      baseTranslateY.setValue(lastTranslate.current.y);
+      panTranslateX.setValue(0);
+      panTranslateY.setValue(0);
+    }
+  }
+
+  function resetZoom() {
+    lastScale.current = 1;
+    lastTranslate.current = { x: 0, y: 0 };
+    baseScale.setValue(1);
+    pinchScale.setValue(1);
+    baseTranslateX.setValue(0);
+    baseTranslateY.setValue(0);
+    panTranslateX.setValue(0);
+    panTranslateY.setValue(0);
+  }
 
   const { schools, lines } = useMemo(
     () => (state.status === "success" ? state.data : { schools: [] as MapSchool[], lines: [] }),
     [state]
   );
-
-  function onPinchStateChange(e: PinchGestureHandlerStateChangeEvent) {
-    if (e.nativeEvent.oldState === State.ACTIVE && e.nativeEvent.state === State.END) {
-      pinchAccumulator.current = Math.min(MAX_SCALE, Math.max(MIN_SCALE, pinchAccumulator.current * e.nativeEvent.scale));
-      setScale(pinchAccumulator.current);
-    }
-  }
 
   if (state.status === "loading") return <LoadingView />;
   if (state.status === "error") return <ErrorView message={state.message} />;
@@ -48,12 +101,29 @@ export function TransferMap() {
   return (
     <View style={styles.container}>
       <Text style={styles.caption}>{schools.length} schools with portal activity — pinch to zoom, tap a school for details</Text>
-      <PinchGestureHandler onHandlerStateChange={onPinchStateChange}>
-        <View style={[styles.mapCard, { width: baseWidth, height: baseHeight }]}>
-          <ScrollView showsVerticalScrollIndicator={false}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View style={{ width: renderWidth, height: renderHeight }}>
-                <Svg width={renderWidth} height={renderHeight} viewBox={MAP_VIEWBOX}>
+      <View style={[styles.mapCard, { width: containerWidth, height: containerHeight }]}>
+        <PanGestureHandler
+          ref={panRef}
+          simultaneousHandlers={pinchRef}
+          onGestureEvent={onPanGestureEvent as (e: PanGestureHandlerGestureEvent) => void}
+          onHandlerStateChange={onPanStateChange}
+          minDist={4}
+        >
+          <Animated.View style={StyleSheet.absoluteFill}>
+            <PinchGestureHandler
+              ref={pinchRef}
+              simultaneousHandlers={panRef}
+              onGestureEvent={onPinchGestureEvent as (e: PinchGestureHandlerGestureEvent) => void}
+              onHandlerStateChange={onPinchStateChange}
+            >
+              <Animated.View
+                style={{
+                  width: containerWidth,
+                  height: containerHeight,
+                  transform: [{ translateX }, { translateY }, { scale }],
+                }}
+              >
+                <Svg width={containerWidth} height={containerHeight} viewBox={MAP_VIEWBOX}>
                   <Path d={US_OUTLINE_PATH} fill={colors.surfaceAlt} stroke={colors.border} strokeWidth={0.5} />
                   {lines.map((l) => (
                     <Line
@@ -81,8 +151,6 @@ export function TransferMap() {
                     )
                   )}
                 </Svg>
-                {/* Logos render as real <Image> overlays, not SVG-embedded images — the
-                    same approach already used reliably everywhere else in this app. */}
                 {schools.map((s) => {
                   const r = radiusFor(s) * pxScale;
                   const size = r * 2;
@@ -111,18 +179,13 @@ export function TransferMap() {
                     </Pressable>
                   );
                 })}
-              </View>
-            </ScrollView>
-          </ScrollView>
-        </View>
-      </PinchGestureHandler>
+              </Animated.View>
+            </PinchGestureHandler>
+          </Animated.View>
+        </PanGestureHandler>
+      </View>
       <View style={styles.legendRow}>
-        <Pressable
-          onPress={() => {
-            pinchAccumulator.current = 1;
-            setScale(1);
-          }}
-        >
+        <Pressable onPress={resetZoom}>
           <Text style={styles.resetText}>Reset zoom</Text>
         </Pressable>
       </View>
