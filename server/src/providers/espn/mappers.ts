@@ -101,7 +101,8 @@ export function mapConferences(raw: EspnStandingsResponse): NormalizedConference
       console.warn("[espn] skipping standings group with missing id/name", g);
       continue;
     }
-    out.push({ espnId: g.id, name: g.name, shortName: g.abbreviation ?? g.name });
+    // ESPN's abbreviation casing is inconsistent ("aeast", "acc" alongside "ASUN") — normalize for display.
+    out.push({ espnId: g.id, name: g.name, shortName: (g.abbreviation ?? g.name).toUpperCase() });
   }
   return out;
 }

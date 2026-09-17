@@ -35,7 +35,7 @@ async function request<T>(path: string): Promise<T> {
 
 export const api = {
   getScoreboard: () => request<{ games: GameSummary[] }>("/api/scoreboard"),
-  getGame: (id: string) => request<{ game: GameSummary }>(`/api/games/${id}`),
+  getGame: (id: string) => request<{ game: GameDetail }>(`/api/games/${id}`),
   getTeams: (params?: { conference?: string; search?: string }) => {
     const qs = new URLSearchParams();
     if (params?.conference) qs.set("conference", params.conference);
@@ -87,6 +87,47 @@ export type GameSummary = {
   broadcast: string | null;
   homeTeam: TeamRef & { score: number };
   awayTeam: TeamRef & { score: number };
+};
+
+export type GameTeamStats = {
+  pointsPerGame: number | null;
+  opponentPointsPerGame: number | null;
+  reboundsPerGame: number | null;
+  assistsPerGame: number | null;
+  netRating: number | null;
+  pace: number | null;
+  effectiveFieldGoalPct: number | null;
+  turnoversPerGame: number | null;
+};
+
+export type GameTopPerformer = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  position: string;
+  photoUrl: string | null;
+  pointsPerGame: number | null;
+  reboundsPerGame: number | null;
+  assistsPerGame: number | null;
+};
+
+export type GameTeamDetail = TeamRef & {
+  score: number;
+  record: { wins: number; losses: number } | null;
+  seasonStats: GameTeamStats | null;
+  topPerformers: GameTopPerformer[];
+};
+
+export type GameDetail = {
+  id: string;
+  status: "scheduled" | "live" | "final";
+  period: number;
+  clock: string;
+  startTime: string;
+  venue: string;
+  broadcast: string | null;
+  homeTeam: GameTeamDetail;
+  awayTeam: GameTeamDetail;
 };
 
 export type TeamRecord = {

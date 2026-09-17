@@ -64,7 +64,7 @@ export async function syncTeamLocations() {
 
     await prisma.team.update({
       where: { id: teamId },
-      data: { city: loc.city, state: loc.state, cbbdId: loc.cbbdId },
+      data: { city: loc.city, state: loc.state, venueName: loc.venueName, cbbdId: loc.cbbdId },
     });
   }
 

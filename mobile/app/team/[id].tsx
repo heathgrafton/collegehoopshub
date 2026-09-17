@@ -1,4 +1,5 @@
 import { Link, Stack, useLocalSearchParams } from "expo-router";
+import { useMemo } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { api, type RosterPlayer } from "../../src/api/client";
 import { useApi } from "../../src/api/useApi";
@@ -10,6 +11,10 @@ import { PlayerPhoto } from "../../src/components/PlayerPhoto";
 
 function fmt(value: number | null | undefined, digits = 1): string {
   return value === null || value === undefined ? "–" : value.toFixed(digits);
+}
+
+function pct(value: number | null | undefined): string {
+  return value === null || value === undefined ? "–" : `${(value * 100).toFixed(1)}%`;
 }
 
 function StatBox({ label, value }: { label: string; value: string }) {
@@ -41,16 +46,44 @@ function PlayerRow({ player }: { player: RosterPlayer }) {
   );
 }
 
+function TopPerformerCard({ player }: { player: RosterPlayer }) {
+  return (
+    <Link href={`/player/${player.id}`} asChild>
+      <Pressable style={styles.performerCard}>
+        <PlayerPhoto uri={player.photoUrl} initials={`${player.firstName[0] ?? ""}${player.lastName[0] ?? ""}`} size={48} />
+        <Text style={styles.performerName} numberOfLines={1}>
+          {player.firstName} {player.lastName}
+        </Text>
+        <Text style={styles.performerSub}>{player.position}</Text>
+        <View style={styles.performerStats}>
+          <Text style={styles.performerStat}>{fmt(player.pointsPerGame)} PPG</Text>
+          <Text style={styles.performerStat}>{fmt(player.reboundsPerGame)} RPG</Text>
+          <Text style={styles.performerStat}>{fmt(player.assistsPerGame)} APG</Text>
+        </View>
+      </Pressable>
+    </Link>
+  );
+}
+
 export default function TeamDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { state } = useApi(() => api.getTeam(id), [id]);
   const { isFavoriteTeam, toggleFavoriteTeam } = useFavorites();
+
+  const topPerformers = useMemo(() => {
+    if (state.status !== "success") return [];
+    return [...state.data.team.roster]
+      .filter((p) => p.pointsPerGame !== null)
+      .sort((a, b) => (b.pointsPerGame ?? 0) - (a.pointsPerGame ?? 0))
+      .slice(0, 3);
+  }, [state]);
 
   if (state.status === "loading") return <LoadingView />;
   if (state.status === "error") return <ErrorView message={state.message} />;
 
   const { team } = state.data;
   const favorite = isFavoriteTeam(team.id);
+  const s = team.seasonStats;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -70,15 +103,39 @@ export default function TeamDetailScreen() {
       </View>
 
       {team.record && (
-        <View style={styles.statsRow}>
-          <StatBox label="Record" value={`${team.record.wins}-${team.record.losses}`} />
-          <StatBox label="Conf." value={`${team.record.conferenceWins}-${team.record.conferenceLosses}`} />
-          {team.seasonStats && (team.seasonStats.pointsPerGame !== null || team.seasonStats.opponentPointsPerGame !== null) && (
-            <>
-              <StatBox label="PPG" value={fmt(team.seasonStats.pointsPerGame)} />
-              <StatBox label="Opp PPG" value={fmt(team.seasonStats.opponentPointsPerGame)} />
-            </>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Team Stats</Text>
+          <View style={styles.statsRow}>
+            <StatBox label="Record" value={`${team.record.wins}-${team.record.losses}`} />
+            <StatBox label="Conf." value={`${team.record.conferenceWins}-${team.record.conferenceLosses}`} />
+            <StatBox label="PPG" value={fmt(s?.pointsPerGame)} />
+            <StatBox label="Opp PPG" value={fmt(s?.opponentPointsPerGame)} />
+          </View>
+          {s && (
+            <View style={styles.statsRow}>
+              <StatBox label="RPG" value={fmt(s.reboundsPerGame)} />
+              <StatBox label="APG" value={fmt(s.assistsPerGame)} />
+              <StatBox label="Pace" value={fmt(s.pace)} />
+              <StatBox label="eFG%" value={pct(s.effectiveFieldGoalPct)} />
+            </View>
           )}
+          {s && (s.netRating !== null || s.turnoversPerGame !== null) && (
+            <View style={styles.statsRow}>
+              <StatBox label="Net Rtg" value={fmt(s.netRating)} />
+              <StatBox label="TOV" value={fmt(s.turnoversPerGame)} />
+            </View>
+          )}
+        </View>
+      )}
+
+      {topPerformers.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Top Performers</Text>
+          <View style={styles.performersRow}>
+            {topPerformers.map((p) => (
+              <TopPerformerCard key={p.id} player={p} />
+            ))}
+          </View>
         </View>
       )}
 
@@ -125,18 +182,31 @@ export default function TeamDetailScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  content: { padding: 16, gap: 16, paddingBottom: 40 },
+  content: { padding: 16, gap: 20, paddingBottom: 40 },
   header: { flexDirection: "row", alignItems: "center", gap: 12 },
   teamName: { color: colors.textPrimary, fontSize: 20, fontWeight: "700" },
   teamSub: { color: colors.textSecondary, fontSize: 13, marginTop: 2 },
   starText: { color: colors.textMuted, fontSize: 26 },
   starTextActive: { color: colors.accent },
-  statsRow: { flexDirection: "row", backgroundColor: colors.surface, borderRadius: 12, padding: 12 },
+  statsRow: { flexDirection: "row", backgroundColor: colors.surface, borderRadius: 12, padding: 12, marginBottom: 8 },
   statBox: { flex: 1, alignItems: "center" },
   statValue: { color: colors.textPrimary, fontSize: 17, fontWeight: "700" },
   statLabel: { color: colors.textMuted, fontSize: 11, marginTop: 2 },
-  section: { gap: 4 },
-  sectionTitle: { color: colors.textPrimary, fontSize: 16, fontWeight: "700", marginBottom: 6 },
+  section: { gap: 8 },
+  sectionTitle: { color: colors.textPrimary, fontSize: 16, fontWeight: "700", marginBottom: 4 },
+  performersRow: { flexDirection: "row", gap: 10 },
+  performerCard: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: 12,
+    alignItems: "center",
+    gap: 4,
+  },
+  performerName: { color: colors.textPrimary, fontSize: 13, fontWeight: "700", marginTop: 4 },
+  performerSub: { color: colors.textMuted, fontSize: 11 },
+  performerStats: { flexDirection: "row", gap: 6, marginTop: 6, flexWrap: "wrap", justifyContent: "center" },
+  performerStat: { color: colors.textSecondary, fontSize: 10, fontWeight: "600" },
   gameLine: {
     flexDirection: "row",
     justifyContent: "space-between",

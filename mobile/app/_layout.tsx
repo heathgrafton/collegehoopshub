@@ -1,6 +1,7 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { ActivityIndicator, View } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { colors } from "../src/theme/colors";
 import { FavoritesProvider, useFavorites } from "../src/favorites/FavoritesContext";
 import { OnboardingScreen } from "../src/components/OnboardingScreen";
@@ -36,9 +37,11 @@ function Gate() {
 
 export default function RootLayout() {
   return (
-    <FavoritesProvider>
-      <StatusBar style="light" />
-      <Gate />
-    </FavoritesProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <FavoritesProvider>
+        <StatusBar style="light" />
+        <Gate />
+      </FavoritesProvider>
+    </GestureHandlerRootView>
   );
 }

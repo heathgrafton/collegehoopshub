@@ -7,6 +7,7 @@ const ONBOARDED_KEY = "collegehoopshub:onboarded:v1";
 type FavoritesState = {
   teamIds: string[];
   playerIds: string[];
+  conferenceNames: string[];
 };
 
 type FavoritesContextValue = {
@@ -14,19 +15,24 @@ type FavoritesContextValue = {
   hasOnboarded: boolean;
   favoriteTeamIds: string[];
   favoritePlayerIds: string[];
+  favoriteConferenceNames: string[];
   isFavoriteTeam: (id: string) => boolean;
   isFavoritePlayer: (id: string) => boolean;
+  isFavoriteConference: (name: string) => boolean;
   toggleFavoriteTeam: (id: string) => void;
   toggleFavoritePlayer: (id: string) => void;
-  completeOnboarding: (initialTeamIds: string[]) => void;
+  toggleFavoriteConference: (name: string) => void;
+  completeOnboarding: (initial: { teamIds: string[]; playerIds: string[]; conferenceNames: string[] }) => void;
 };
 
 const FavoritesContext = createContext<FavoritesContextValue | null>(null);
 
+const EMPTY_STATE: FavoritesState = { teamIds: [], playerIds: [], conferenceNames: [] };
+
 export function FavoritesProvider({ children }: { children: ReactNode }) {
   const [isReady, setIsReady] = useState(false);
   const [hasOnboarded, setHasOnboarded] = useState(false);
-  const [state, setState] = useState<FavoritesState>({ teamIds: [], playerIds: [] });
+  const [state, setState] = useState<FavoritesState>(EMPTY_STATE);
 
   useEffect(() => {
     (async () => {
@@ -35,7 +41,7 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
           AsyncStorage.getItem(STORAGE_KEY),
           AsyncStorage.getItem(ONBOARDED_KEY),
         ]);
-        if (storedFavorites) setState(JSON.parse(storedFavorites));
+        if (storedFavorites) setState({ ...EMPTY_STATE, ...JSON.parse(storedFavorites) });
         setHasOnboarded(storedOnboarded === "true");
       } catch {
         // Storage unavailable (e.g. private browsing) — proceed with defaults rather than blocking the app.
@@ -64,8 +70,17 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
     });
   }
 
-  function completeOnboarding(initialTeamIds: string[]) {
-    persist({ ...state, teamIds: initialTeamIds });
+  function toggleFavoriteConference(name: string) {
+    persist({
+      ...state,
+      conferenceNames: state.conferenceNames.includes(name)
+        ? state.conferenceNames.filter((c) => c !== name)
+        : [...state.conferenceNames, name],
+    });
+  }
+
+  function completeOnboarding(initial: { teamIds: string[]; playerIds: string[]; conferenceNames: string[] }) {
+    persist({ ...state, ...initial });
     setHasOnboarded(true);
     AsyncStorage.setItem(ONBOARDED_KEY, "true").catch(() => {});
   }
@@ -76,10 +91,13 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
       hasOnboarded,
       favoriteTeamIds: state.teamIds,
       favoritePlayerIds: state.playerIds,
+      favoriteConferenceNames: state.conferenceNames,
       isFavoriteTeam: (id) => state.teamIds.includes(id),
       isFavoritePlayer: (id) => state.playerIds.includes(id),
+      isFavoriteConference: (name) => state.conferenceNames.includes(name),
       toggleFavoriteTeam,
       toggleFavoritePlayer,
+      toggleFavoriteConference,
       completeOnboarding,
     }),
     [isReady, hasOnboarded, state]

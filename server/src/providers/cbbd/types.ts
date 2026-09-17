@@ -15,6 +15,7 @@ export type CbbdTeam = {
   school: string;
   mascot: string | null;
   displayName: string | null;
+  currentVenue: string | null;
   currentCity: string | null;
   currentState: string | null;
 };

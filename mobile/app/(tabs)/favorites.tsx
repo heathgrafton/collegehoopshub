@@ -10,7 +10,8 @@ import { TeamLogo } from "../../src/components/TeamLogo";
 import { PlayerPhoto } from "../../src/components/PlayerPhoto";
 
 export default function FavoritesScreen() {
-  const { favoriteTeamIds, favoritePlayerIds, toggleFavoriteTeam, toggleFavoritePlayer } = useFavorites();
+  const { favoriteTeamIds, favoritePlayerIds, favoriteConferenceNames, toggleFavoriteTeam, toggleFavoritePlayer, toggleFavoriteConference } =
+    useFavorites();
   const { state: teamsState } = useApi(() => api.getTeams(), []);
   const { state: playersState } = useApi(() => api.getPlayers(), []);
 
@@ -28,7 +29,7 @@ export default function FavoritesScreen() {
   if (teamsState.status === "error") return <ErrorView message={teamsState.message} />;
   if (playersState.status === "error") return <ErrorView message={playersState.message} />;
 
-  const isEmpty = favoriteTeams.length === 0 && favoritePlayers.length === 0;
+  const isEmpty = favoriteTeams.length === 0 && favoritePlayers.length === 0 && favoriteConferenceNames.length === 0;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -38,7 +39,8 @@ export default function FavoritesScreen() {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>No favorites yet</Text>
           <Text style={styles.cardBody}>
-            Tap the ☆ on any team or player to follow them. Favorited teams show up first on Scores and Teams.
+            Tap the ☆ on any team or player to follow them, or pick conferences during onboarding. Favorited teams
+            show up first on Scores and Teams.
           </Text>
         </View>
       )}
@@ -75,6 +77,20 @@ export default function FavoritesScreen() {
                 </Pressable>
               </Pressable>
             </Link>
+          ))}
+        </View>
+      )}
+
+      {favoriteConferenceNames.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Conferences</Text>
+          {favoriteConferenceNames.map((name) => (
+            <View key={name} style={styles.row}>
+              <Text style={styles.rowText}>{name}</Text>
+              <Pressable hitSlop={10} onPress={() => toggleFavoriteConference(name)}>
+                <Text style={styles.star}>★</Text>
+              </Pressable>
+            </View>
           ))}
         </View>
       )}

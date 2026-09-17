@@ -11,6 +11,7 @@ export type NormalizedTeamLocation = {
   cbbdId: string;
   teamSchool: string;
   displayName: string | null;
+  venueName: string | null;
   city: string;
   state: string;
 };
@@ -25,6 +26,7 @@ export function mapTeams(raw: CbbdTeam[]): NormalizedTeamLocation[] {
       cbbdId: String(t.id),
       teamSchool: t.school,
       displayName: t.displayName,
+      venueName: t.currentVenue,
       city: t.currentCity,
       state: t.currentState,
     });

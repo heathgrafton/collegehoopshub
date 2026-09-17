@@ -26,6 +26,7 @@ model Team {
   nickname      String
   city          String
   state         String
+  venueName     String?
   primaryColor  String
   logoUrl       String?
   latitude      Float?
